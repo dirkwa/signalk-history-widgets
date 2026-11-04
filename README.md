@@ -42,5 +42,5 @@ Unit Preferences, unless the strip sets its own.
 
 ## Requirements
 
-- Signal K server 2.22.1 or newer (History API v2)
+- Signal K server 2.22.1 or newer (History API v2) on Node 24 or newer
 - A chartplotter that hosts Plotter Extensions widgets, such as Freeboard-SK
