@@ -1,0 +1,70 @@
+{
+  "name": "signalk-history-widgets",
+  "version": "0.0.0",
+  "description": "History strip widgets for Signal K chartplotters: any value over the last minutes or hours as a vertical strip with min, average and max, like the wind history page on a sailing instrument",
+  "author": "Dirk Wahrheit",
+  "main": "plugin/index.js",
+  "type": "module",
+  "signalk-plugin-enabled-by-default": true,
+  "scripts": {
+    "format": "prettier --write . && eslint --fix .",
+    "ci-lint": "eslint . && prettier --check .",
+    "build": "vite build && vite build -c vite.web.config.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.eslint.json && tsc --noEmit -p web/tsconfig.json",
+    "test": "vitest run",
+    "build:all": "npm run ci-lint && npm run typecheck && npm run build && npm run test",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "signalk-node-server-plugin",
+    "signalk-category-plotter-extensions",
+    "signalk-category-chart-plotters",
+    "signalk-category-instruments",
+    "wind",
+    "history",
+    "trend"
+  ],
+  "signalk": {
+    "displayName": "History Widgets",
+    "appIcon": "./icon.svg",
+    "recommends": [
+      "@signalk/freeboard-sk"
+    ],
+    "screenshots": [
+      "./docs/screenshots/wind-strips.png",
+      "./docs/screenshots/config.png"
+    ]
+  },
+  "files": [
+    "plugin/**/*",
+    "public/**/*",
+    "docs/screenshots/*.png"
+  ],
+  "engines": {
+    "node": ">=22.15.0",
+    "signalk": ">=2.22.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dirkwa/signalk-history-widgets.git"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@signalk/server-api": "^2.36.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.20.5",
+    "eslint": "^10.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.7",
+    "jiti": "^2.7.0",
+    "jsdom": "^30.1.3",
+    "prettier": "^3.9.10",
+    "signalk-plotterext-bus": "^0.24.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^8.3.5",
+    "vite-plugin-checker": "^0.14.5",
+    "vitest": "^5.1.0"
+  }
+}

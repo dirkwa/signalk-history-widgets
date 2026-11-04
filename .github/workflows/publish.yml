@@ -1,0 +1,97 @@
+name: Publish
+
+# Publishes the tag it runs on to npm. release-please dispatches this at the
+# tag it created (a tag pushed with GITHUB_TOKEN starts no workflow); a tag
+# pushed by hand, such as a -beta.N pre-release, starts it directly.
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  # npm publishes package.json's version whatever the tag is called, so check
+  # the tag first: a mismatched tag gets neither a Release nor a publish. A
+  # dispatch on a ref that is not a release tag skips this job and the rest.
+  version:
+    if: github.repository == 'dirkwa/signalk-history-widgets' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      prerelease: ${{ steps.check.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Check the tag
+        id: check
+        run: |
+          TAGGED="${GITHUB_REF_NAME#v}"
+          # MAJOR.MINOR.PATCH with optional -prerelease and +build (semver.org BNF)
+          if ! printf '%s' "$TAGGED" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'; then
+            echo "::error::Tag '$GITHUB_REF_NAME' is not strict semver - refusing to publish."
+            exit 1
+          fi
+          VERSION=$(jq -r .version package.json)
+          if [ "$TAGGED" = "$VERSION" ]; then
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          elif [[ "$TAGGED" == *-* ]]; then
+            # release-please bumps package.json only in its release PR, so a
+            # pre-release tag carries its version in the name alone.
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $VERSION - refusing to publish."
+            exit 1
+          fi
+
+  # release-please creates its own Release; only a hand-pushed tag needs one.
+  release:
+    needs: version
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          prerelease: ${{ needs.version.outputs.prerelease == 'true' }}
+
+  publish:
+    needs: [version, release]
+    # A dispatch skips the release job, which must not skip this one.
+    if: ${{ !cancelled() && needs.version.result == 'success' && needs.release.result != 'failure' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+      - name: Publish (OIDC trusted publishing, no token)
+        env:
+          PRERELEASE: ${{ needs.version.outputs.prerelease }}
+        run: |
+          if [ "$PRERELEASE" = true ]; then
+            npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
+            npm publish --provenance --access public --tag beta
+          else
+            npm publish --provenance --access public
+          fi
