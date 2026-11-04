@@ -1,6 +1,6 @@
 {
   "name": "signalk-history-widgets",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "History strip widgets for Signal K chartplotters: any value over the last minutes or hours as a vertical strip with min, average and max, like the wind history page on a sailing instrument",
   "author": "Dirk Wahrheit",
   "main": "plugin/index.js",
