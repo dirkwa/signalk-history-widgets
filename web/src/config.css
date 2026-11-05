@@ -120,3 +120,59 @@ select {
   height: 22px;
   min-height: 0;
 }
+
+.section-title {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 4px 0 6px;
+}
+
+.picks {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font-size: 15px;
+  text-align: left;
+}
+
+.pick .name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pick .reading {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pick.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.pick.on .reading {
+  color: #fff;
+}
+
+/* Save stays in reach while a long list of tanks scrolls. */
+.actions.sticky {
+  position: sticky;
+  bottom: 0;
+  padding: 10px 0;
+  background: var(--bg);
+}

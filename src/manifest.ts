@@ -21,7 +21,7 @@ export function buildManifest(version: string) {
   return {
     name: 'History Widgets',
     description:
-      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum, and a wind steering dial with the wind shift of the last minutes.',
+      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum, a wind steering dial with the wind shift of the last minutes, and tank levels coloured by their zones.',
     version,
     apiVersion: '1',
     requires: ['widgets', 'panels.iframe', 'signalk.stream'],
@@ -36,6 +36,15 @@ export function buildManifest(version: string) {
         url: `${ASSET_BASE}/steer.html`,
         size: '2x2',
         configPanel: 'wind-steering-config',
+        lifecycle: 'whileEnabled'
+      },
+      {
+        id: 'tank',
+        title: 'Tank level',
+        type: 'iframe',
+        url: `${ASSET_BASE}/tank.html`,
+        size: '1x2',
+        configPanel: 'tank-config',
         lifecycle: 'whileEnabled'
       }
     ],
@@ -52,6 +61,13 @@ export function buildManifest(version: string) {
         title: 'Wind steering',
         type: 'iframe',
         url: `${ASSET_BASE}/steer-config.html`,
+        lifecycle: 'onOpen'
+      },
+      {
+        id: 'tank-config',
+        title: 'Tank level',
+        type: 'iframe',
+        url: `${ASSET_BASE}/tank-config.html`,
         lifecycle: 'onOpen'
       }
     ]

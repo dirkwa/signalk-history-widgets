@@ -10,7 +10,8 @@ moves.
 
 ![True wind direction and speed over 30 minutes](docs/screenshots/wind-strips.png)
 
-The package also brings a **Wind steering** dial, described [below](#wind-steering).
+The package also brings a **Wind steering** dial and a **Tank level**
+widget, described [below](#wind-steering).
 
 ## Use
 
@@ -73,6 +74,23 @@ hidden rather than shown stale. It reads standard Signal K paths:
 `environment.current.setMagnetic`), plus `environment.wind.*`,
 `navigation.speedOverGround`, `environment.current.drift` and
 `steering.rudderAngle`.
+
+## Tank level
+
+A glass cylinder filled to a tank's level, with the percentage and, when the
+tank publishes its capacity, the volume left in the unit set in the server's
+Unit Preferences. The colour follows the zones set for the level in the
+server's metadata (`meta.zones`): green when the level is normal, yellow in
+an alert or warn zone, red in an alarm or emergency zone. Marks beside the
+tank show where the zones begin, so you see how far the level is from the
+next one. Without zones the tank stays green.
+
+![Tank levels in their zones](docs/screenshots/tank.png)
+
+Press and hold the tank to pick another one. The panel lists every
+`tanks.*.*.currentLevel` on the server with its current level, plus any other
+0 to 100 % value such as a battery's state of charge, so it is set up with a
+few taps and no keyboard. A level older than two minutes shows as `--`.
 
 ## Requirements
 

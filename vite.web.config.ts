@@ -18,7 +18,9 @@ export default defineConfig({
         widget: `${here}web/widget.html`,
         config: `${here}web/config.html`,
         steer: `${here}web/steer.html`,
-        'steer-config': `${here}web/steer-config.html`
+        'steer-config': `${here}web/steer-config.html`,
+        tank: `${here}web/tank.html`,
+        'tank-config': `${here}web/tank-config.html`
       }
     }
   },
