@@ -21,7 +21,7 @@ The package also brings a **Wind steering** dial, described [below](#wind-steeri
    (wide)**.
 3. Pick the value: a quick button (TWD, TWS, TWA, AWA, AWS, SOG, STW, COG,
    HDG, depth, air pressure, air and water temperature) or any numeric Signal K
-   path. Set the time span in minutes or hours, from one minute to a week.
+   path. Tap the time span, from 5 minutes to 24 hours.
 
 For several values, place several strips next to each other. Press and hold a
 placed strip to change it or remove it.
