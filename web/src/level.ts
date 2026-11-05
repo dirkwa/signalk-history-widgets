@@ -6,6 +6,7 @@
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import { installLongPress, followNightMode } from './host.js'
 import { fetchMeta, fetchValue } from './signalk.js'
+import { SourceClock } from './steer-model.js'
 import {
   KINDS,
   levelOf,
@@ -116,15 +117,17 @@ export function startLevel(kind: LevelKind): void {
   async function apply(client: ExtensionClient): Promise<void> {
     const mine = ++generation
     const config = parseLevelConfig(await client.state.get())
-    const detailPath = spec.detailPath(config.path)
+    // Only a tank or bank of this kind has a capacity or voltage beside it;
+    // another 0 to 100 % value shows its level alone.
+    const detailPath = spec.matches(config.path) ? spec.detailPath(config.path) : undefined
     // A tank's capacity is sent rarely, often only at boot, so a widget opened
     // later reads it once; a reading that ages (a bank's voltage) waits for
     // the stream instead of showing an old value as current.
     const [levelMeta, detailMeta, detailNow] = config.path
       ? await Promise.all([
           fetchMeta(config.path),
-          fetchMeta(detailPath),
-          spec.detailAges ? undefined : fetchValue(detailPath)
+          detailPath ? fetchMeta(detailPath) : undefined,
+          detailPath && !spec.detailAges ? fetchValue(detailPath) : undefined
         ])
       : [undefined, undefined, undefined]
     if (mine !== generation) return
@@ -146,9 +149,12 @@ export function startLevel(kind: LevelKind): void {
     }
     let next: (() => Promise<void>) | undefined
     if (config.path) {
-      next = await client.signalk.subscribe([config.path, detailPath], (ev) => {
+      const paths = detailPath ? [config.path, detailPath] : [config.path]
+      const clock = new SourceClock()
+      next = await client.signalk.subscribe(paths, (ev) => {
         if (typeof ev.value !== 'number' || !Number.isFinite(ev.value)) return
-        const reading = { time: Date.now(), value: ev.value }
+        // A cached reading keeps its real age, so an old level still greys out.
+        const reading = { time: clock.local(Date.now(), ev.timestamp), value: ev.value }
         if (ev.path === config.path) s.levelReading = reading
         else s.detailReading = reading
         queueRender()
