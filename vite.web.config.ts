@@ -24,7 +24,9 @@ export default defineConfig({
         battery: `${here}web/battery.html`,
         'battery-config': `${here}web/battery-config.html`,
         clock: `${here}web/clock.html`,
-        'clock-config': `${here}web/clock-config.html`
+        'clock-config': `${here}web/clock-config.html`,
+        depth: `${here}web/depth.html`,
+        'depth-config': `${here}web/depth-config.html`
       }
     }
   },

@@ -11,7 +11,8 @@ moves.
 ![True wind direction and speed over 30 minutes](docs/screenshots/wind-strips.png)
 
 The package also brings a **Wind steering** dial, **Tank level** and
-**Battery charge** widgets and a **Clock**, described [below](#wind-steering).
+**Battery charge** widgets, a **Clock** and a **Depth profile**, described
+[below](#wind-steering) and [further down](#depth-profile).
 
 ## Use
 
@@ -116,6 +117,22 @@ without a network right.
 
 Press and hold the clock to choose the zone, 24 or 12 hours, and whether to
 show seconds and the date, all with buttons.
+
+## Depth profile
+
+The depth over the last minutes or hours like an echo sounder: time runs
+left to right with now at the right edge, depth runs down from the surface,
+and the seabed is filled in below each moment's shallowest reading. The
+current depth sits top left in the unit set in the server's Unit
+Preferences. Like the strip, it is seeded from the History API: with a
+history provider on the server it is full as soon as it opens, without one
+it fills from live data as the window passes.
+
+![Depth profiles, large and wide](docs/screenshots/depth.png)
+
+It follows the depth below the surface when the server has it, else below
+the transducer or the keel. Press and hold it to pick one of those yourself
+or another window, from 5 minutes to 24 hours, all with buttons.
 
 ## Requirements
 

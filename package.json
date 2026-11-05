@@ -1,7 +1,7 @@
 {
   "name": "signalk-history-widgets",
   "version": "0.4.0",
-  "description": "History strip, wind steering, tank level and clock widgets for Signal K chartplotters: any value over the last minutes or hours as a vertical strip with min, average and max, a wind steering dial with close-hauled lines and the recent wind shift, tank levels and battery charge coloured by their zones, and a clock in local, UTC or boat time",
+  "description": "History strip, wind steering, tank level, clock and depth profile widgets for Signal K chartplotters: any value over the last minutes or hours as a vertical strip with min, average and max, a wind steering dial with close-hauled lines and the recent wind shift, tank levels and battery charge coloured by their zones, a clock in local, UTC or boat time, and the depth over time like an echo sounder",
   "author": "Dirk Wahrheit",
   "main": "plugin/index.js",
   "type": "module",
