@@ -48,11 +48,11 @@ function form(config: StripConfig, paths: PathInfo[], providers: string[]): stri
     <label class="row"><span>Label</span>
       <input id="label" value="${esc(config.label)}" placeholder="Automatic">
     </label>
-    <div class="row"><span>Time span</span>
-      <div class="chips">${spanChoices(config)
+    <div class="row"><span id="span-title">Time span</span>
+      <div class="chips" role="group" aria-labelledby="span-title">${spanChoices(config)
         .map(
           (c) =>
-            `<button type="button" class="chip${windowMs({ ...config, ...c }) === windowMs(config) ? ' on' : ''}" data-span="${c.span}" data-span-unit="${c.spanUnit}">${c.label}</button>`
+            `<button type="button" class="chip${windowMs({ ...config, ...c }) === windowMs(config) ? ' on' : ''}" aria-pressed="${windowMs({ ...config, ...c }) === windowMs(config)}" data-span="${c.span}" data-span-unit="${c.spanUnit}">${c.label}</button>`
         )
         .join('')}</div>
     </div>
@@ -134,7 +134,10 @@ async function main(): Promise<void> {
   const spans = document.querySelectorAll<HTMLButtonElement>('[data-span]')
   for (const chip of spans) {
     chip.addEventListener('click', () => {
-      for (const other of spans) other.classList.toggle('on', other === chip)
+      for (const other of spans) {
+        other.classList.toggle('on', other === chip)
+        other.setAttribute('aria-pressed', String(other === chip))
+      }
     })
   }
 
