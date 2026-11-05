@@ -203,11 +203,14 @@ export const CLOCK_WINDOW_MS = 60_000
  * differ from the browser's, so the offset between them is the smallest gap
  * between arrival and source time over the last minute: the freshest reading
  * sets it, and a timestamp that ran ahead only holds it down until it ages
- * out of that window. Without a usable timestamp the arrival time stands.
+ * out of that window. After a silence longer than the window the last offset
+ * carries over, so a delayed first reading still shows its age. Without a
+ * usable timestamp the arrival time stands.
  */
 export class SourceClock {
   /** The smallest gap per second of arrival, oldest first. */
   private gaps: { second: number; gap: number }[] = []
+  private offset: number | undefined
 
   local(arrival: number, timestamp: string | undefined): number {
     const source = timestamp === undefined ? NaN : Date.parse(timestamp)
@@ -216,11 +219,15 @@ export class SourceClock {
     const second = Math.floor(arrival / 1000)
     const cutoff = second - CLOCK_WINDOW_MS / 1000
     while ((this.gaps[0]?.second ?? Infinity) <= cutoff) this.gaps.shift()
+    if (this.gaps.length === 0 && this.offset !== undefined && this.offset < gap) {
+      this.gaps.push({ second, gap: this.offset })
+    }
     const last = this.gaps.at(-1)
     if (last?.second === second) last.gap = Math.min(last.gap, gap)
     else this.gaps.push({ second, gap })
     let offset = gap
     for (const g of this.gaps) offset = Math.min(offset, g.gap)
+    this.offset = offset
     return source + offset
   }
 }

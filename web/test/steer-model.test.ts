@@ -168,9 +168,21 @@ describe('SourceClock window', () => {
     // A reading stamped five minutes ahead pulls the offset down for a while.
     c.local(101_000, at(401_000))
     expect(c.local(102_000, at(102_000))).toBe(-198_000)
-    // Once it has left the window, fresh readings read fresh again.
-    expect(c.local(102_000 + CLOCK_WINDOW_MS, at(102_000 + CLOCK_WINDOW_MS))).toBe(
-      102_000 + CLOCK_WINDOW_MS
-    )
+    // Live readings keep coming; once it has left the window they read fresh again.
+    for (let t = 110_000; t < 102_000 + CLOCK_WINDOW_MS; t += 10_000) c.local(t, at(t))
+    const end = 102_000 + CLOCK_WINDOW_MS
+    expect(c.local(end, at(end))).toBe(end)
+  })
+})
+
+describe('SourceClock after a silence', () => {
+  const at = (ms: number) => new Date(ms).toISOString()
+
+  it('keeps the offset for a delayed reading after the window emptied', () => {
+    const c = new SourceClock()
+    c.local(100_000, at(100_000))
+    const later = 100_000 + 2 * CLOCK_WINDOW_MS
+    expect(c.local(later, at(later - 30_000))).toBe(later - 30_000)
+    expect(c.local(later + 1000, at(later + 1000))).toBe(later + 1000)
   })
 })
