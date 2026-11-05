@@ -82,3 +82,15 @@ export async function fetchHistoryProviders(): Promise<string[]> {
     return []
   }
 }
+
+/** A path's current value, whatever its type; undefined when it has none. */
+export async function fetchValue(path: string): Promise<unknown> {
+  try {
+    const res = await fetch(`/signalk/v1/api/vessels/self/${path.replace(/\./g, '/')}/value`, {
+      credentials: 'include'
+    })
+    return res.ok ? ((await res.json()) as unknown) : undefined
+  } catch {
+    return undefined
+  }
+}

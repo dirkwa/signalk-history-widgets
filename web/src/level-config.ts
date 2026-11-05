@@ -29,7 +29,7 @@ const PERCENT = resolveDisplay({ units: 'ratio' }, 'percent', 0)
 
 function pickButton(spec: KindSpec, p: PathInfo, selected: string): string {
   const name = spec.matches(p.path) ? p.displayName || spec.name(p.path) : p.path
-  return `<button type="button" class="pick${p.path === selected ? ' on' : ''}" data-path="${esc(p.path)}" title="${esc(p.path)}">
+  return `<button type="button" class="pick${p.path === selected ? ' on' : ''}" aria-pressed="${p.path === selected}" data-path="${esc(p.path)}" title="${esc(p.path)}">
       <span class="name">${esc(name)}</span>
       <span class="reading">${convert(p.value, PERCENT.conversion).toFixed(PERCENT.decimals)} ${PERCENT.symbol}</span>
     </button>`
@@ -41,12 +41,18 @@ function section(spec: KindSpec, title: string, paths: PathInfo[], selected: str
     <div class="picks">${paths.map((p) => pickButton(spec, p, selected)).join('')}</div>`
 }
 
+/** Marks a button as the chosen one, for the eye and for screen readers. */
+function press(button: HTMLButtonElement, on: boolean): void {
+  button.classList.toggle('on', on)
+  button.setAttribute('aria-pressed', String(on))
+}
+
 /** A row of chips of which exactly one is on; `name` groups them. */
 function choice(name: string, options: [string, string][], value: string): string {
   return `<div class="chips">${options
     .map(
       ([v, label]) =>
-        `<button type="button" class="chip${v === value ? ' on' : ''}" data-${name}="${v}">${label}</button>`
+        `<button type="button" class="chip${v === value ? ' on' : ''}" aria-pressed="${v === value}" data-${name}="${v}">${label}</button>`
     )
     .join('')}</div>`
 }
@@ -56,7 +62,7 @@ function onChoice(name: string, pick: (value: string) => void): void {
   const chips = document.querySelectorAll<HTMLButtonElement>(`[data-${name}]`)
   for (const chip of chips) {
     chip.addEventListener('click', () => {
-      for (const other of chips) other.classList.toggle('on', other === chip)
+      for (const other of chips) press(other, other === chip)
       pick(chip.dataset[name] ?? '')
     })
   }
@@ -111,7 +117,7 @@ async function main(kind: LevelKind): Promise<void> {
     pick.addEventListener('click', () => {
       selected = pick.dataset.path ?? ''
       for (const other of document.querySelectorAll<HTMLButtonElement>('.pick')) {
-        other.classList.toggle('on', other === pick)
+        press(other, other === pick)
       }
     })
   }

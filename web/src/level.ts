@@ -5,7 +5,7 @@
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import { installLongPress, followNightMode } from './host.js'
-import { fetchMeta } from './signalk.js'
+import { fetchMeta, fetchValue } from './signalk.js'
 import {
   KINDS,
   levelOf,
@@ -117,9 +117,16 @@ export function startLevel(kind: LevelKind): void {
     const mine = ++generation
     const config = parseLevelConfig(await client.state.get())
     const detailPath = spec.detailPath(config.path)
-    const [levelMeta, detailMeta] = config.path
-      ? await Promise.all([fetchMeta(config.path), fetchMeta(detailPath)])
-      : [undefined, undefined]
+    // A tank's capacity is sent rarely, often only at boot, so a widget opened
+    // later reads it once; a reading that ages (a bank's voltage) waits for
+    // the stream instead of showing an old value as current.
+    const [levelMeta, detailMeta, detailNow] = config.path
+      ? await Promise.all([
+          fetchMeta(config.path),
+          fetchMeta(detailPath),
+          spec.detailAges ? undefined : fetchValue(detailPath)
+        ])
+      : [undefined, undefined, undefined]
     if (mine !== generation) return
     const s: State = {
       config,
@@ -133,6 +140,9 @@ export function startLevel(kind: LevelKind): void {
         undefined,
         spec.detailDecimals
       )
+    }
+    if (typeof detailNow === 'number' && Number.isFinite(detailNow)) {
+      s.detailReading = { time: Date.now(), value: detailNow }
     }
     let next: (() => Promise<void>) | undefined
     if (config.path) {
