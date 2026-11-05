@@ -8,6 +8,7 @@ import { installLongPress, followNightMode } from './host.js'
 import { fetchMeta } from './signalk.js'
 import {
   ShiftWindow,
+  SourceClock,
   offBow,
   parseSteerConfig,
   sideText,
@@ -42,6 +43,7 @@ interface State {
   config: SteerConfig
   values: Map<SteerKey, { time: number; value: number }>
   shift: ShiftWindow
+  clock: SourceClock
   speed: Display
 }
 
@@ -169,6 +171,7 @@ async function apply(client: ExtensionClient): Promise<void> {
     config,
     values: new Map(),
     shift: new ShiftWindow(config.shiftSeconds * 1000),
+    clock: new SourceClock(),
     // Wind speeds are m/s in Signal K; without it the readouts lose their unit.
     speed: resolveDisplay({ ...meta, units: meta?.units ?? 'm/s' }, undefined, 1)
   }
@@ -182,7 +185,8 @@ async function apply(client: ExtensionClient): Promise<void> {
     const keys = byPath.get(ev.path)
     if (!keys || typeof ev.value !== 'number' || !Number.isFinite(ev.value)) return
     const now = Date.now()
-    for (const key of keys) s.values.set(key, { time: now, value: ev.value })
+    const time = s.clock.local(now, ev.timestamp)
+    for (const key of keys) s.values.set(key, { time, value: ev.value })
     if (keys.some((k) => WIND_KEYS.has(k))) recordShift(s, now)
     queueRender()
   })

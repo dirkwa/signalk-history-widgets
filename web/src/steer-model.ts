@@ -193,3 +193,22 @@ export function sideText(a: number): string {
   if (deg === 0 || deg === 180) return `${deg}°`
   return `${deg}° ${signed(a) < 0 ? 'P' : 'S'}`
 }
+
+/**
+ * Maps a reading's source timestamp onto the local clock, so a cached
+ * reading delivered on subscribe shows its real age. The server's clock may
+ * differ from the browser's, so the offset between them is learnt as the
+ * smallest gap seen between arrival and source time: the freshest reading
+ * sets it. Without a usable timestamp the arrival time stands.
+ */
+export class SourceClock {
+  private offset: number | undefined
+
+  local(arrival: number, timestamp: string | undefined): number {
+    const source = timestamp === undefined ? NaN : Date.parse(timestamp)
+    if (!Number.isFinite(source)) return arrival
+    const gap = arrival - source
+    if (this.offset === undefined || gap < this.offset) this.offset = gap
+    return source + this.offset
+  }
+}

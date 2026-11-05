@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_STEER_CONFIG,
   ShiftWindow,
+  SourceClock,
   compassText,
   offBow,
   parseSteerConfig,
@@ -130,5 +131,29 @@ describe('text', () => {
     expect(sideText(42 * DEG)).toBe('42° S')
     expect(sideText(-120 * DEG)).toBe('120° P')
     expect(sideText(Math.PI)).toBe('180°')
+  })
+})
+
+describe('SourceClock', () => {
+  const at = (ms: number) => new Date(ms).toISOString()
+
+  it('keeps the age of a cached reading', () => {
+    const c = new SourceClock()
+    expect(c.local(100_000, at(100_000))).toBe(100_000)
+    expect(c.local(101_000, at(60_000))).toBe(60_000)
+  })
+
+  it('learns a server clock that runs behind or ahead', () => {
+    const behind = new SourceClock()
+    expect(behind.local(500_000, at(200_000))).toBe(500_000)
+    expect(behind.local(501_000, at(201_000))).toBe(501_000)
+    const ahead = new SourceClock()
+    expect(ahead.local(100_000, at(400_000))).toBe(100_000)
+  })
+
+  it('takes the arrival time without a usable timestamp', () => {
+    const c = new SourceClock()
+    expect(c.local(5000, undefined)).toBe(5000)
+    expect(c.local(5000, 'not a date')).toBe(5000)
   })
 })
