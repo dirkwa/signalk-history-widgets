@@ -5,6 +5,7 @@
 import { connectExtension } from 'signalk-plotterext-bus/extension'
 import { fetchNumericPaths, type PathInfo } from './signalk.js'
 import { isTankLevel, parseTankConfig, tankName } from './tank-model.js'
+import { convert, resolveDisplay } from './units.js'
 import './config.css'
 
 function esc(s: string): string {
@@ -23,11 +24,13 @@ function textInput(id: string): HTMLInputElement {
   throw new Error(`#${id} is not an input`)
 }
 
+const PERCENT = resolveDisplay({ units: 'ratio' }, 'percent', 0)
+
 function pickButton(p: PathInfo, selected: string): string {
-  const name = isTankLevel(p.path) ? (p.displayName ?? tankName(p.path)) : p.path
+  const name = isTankLevel(p.path) ? p.displayName || tankName(p.path) : p.path
   return `<button type="button" class="pick${p.path === selected ? ' on' : ''}" data-path="${esc(p.path)}" title="${esc(p.path)}">
       <span class="name">${esc(name)}</span>
-      <span class="reading">${Math.round(p.value * 100)} %</span>
+      <span class="reading">${convert(p.value, PERCENT.conversion).toFixed(PERCENT.decimals)} ${PERCENT.symbol}</span>
     </button>`
 }
 

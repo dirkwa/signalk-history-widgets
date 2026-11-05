@@ -36,7 +36,8 @@ interface State {
   level: Display
   volume: Display
   levelReading?: Reading
-  capacity?: Reading
+  /** Kept once known: a tank may publish its capacity only now and then. */
+  capacity?: number
 }
 
 const canvas = document.createElement('canvas')
@@ -66,7 +67,7 @@ function frame(now: number): TankFrame {
     }
   }
   const level = fresh(s.levelReading, now)
-  const capacity = fresh(s.capacity, now)
+  const capacity = s.capacity
   const volumeText =
     s.config.showVolume && level !== undefined && capacity !== undefined
       ? `${convert(level * capacity, s.volume.conversion).toFixed(s.volume.decimals)} ${s.volume.symbol}`.trim()
@@ -119,17 +120,17 @@ async function apply(client: ExtensionClient): Promise<void> {
     config,
     title: config.label || levelMeta?.displayName || tankName(config.path),
     zones: parseZones(levelMeta?.zones),
-    // Levels are ratios and capacities m³ in Signal K, metadata or not.
-    level: resolveDisplay({ ...levelMeta, units: levelMeta?.units ?? 'ratio' }, undefined, 0),
+    // Levels are ratios and capacities m³ in Signal K, metadata or not. A level
+    // always reads as a percentage, even where the server prefers plain ratios.
+    level: resolveDisplay({ ...levelMeta, units: levelMeta?.units ?? 'ratio' }, 'percent', 0),
     volume: resolveDisplay({ ...capMeta, units: capMeta?.units ?? 'm3' }, undefined, 0)
   }
   let next: (() => Promise<void>) | undefined
   if (config.path) {
     next = await client.signalk.subscribe([config.path, capPath], (ev) => {
       if (typeof ev.value !== 'number' || !Number.isFinite(ev.value)) return
-      const reading = { time: Date.now(), value: ev.value }
-      if (ev.path === config.path) s.levelReading = reading
-      else s.capacity = reading
+      if (ev.path === config.path) s.levelReading = { time: Date.now(), value: ev.value }
+      else s.capacity = ev.value
       queueRender()
     })
     if (mine !== generation) {
