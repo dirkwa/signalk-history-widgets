@@ -60,7 +60,8 @@ export default function historyWidgets(app: App): Plugin {
   return {
     id: PLUGIN_ID,
     name: 'History Widgets',
-    description: 'History strip widgets for Freeboard-SK and other Plotter Extensions hosts',
+    description:
+      'History strip and wind steering widgets for Freeboard-SK and other Plotter Extensions hosts',
     schema: () => ({ type: 'object', properties: {} }),
 
     start() {

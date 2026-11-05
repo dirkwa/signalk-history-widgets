@@ -10,6 +10,8 @@ moves.
 
 ![True wind direction and speed over 30 minutes](docs/screenshots/wind-strips.png)
 
+The package also brings a **Wind steering** dial, described [below](#wind-steering).
+
 ## Use
 
 1. Install **History Widgets** from the App Store and restart the server. The
@@ -39,6 +41,34 @@ angle, are signed. Values show in the unit set for the path in the server's
 Unit Preferences, unless the strip sets its own.
 
 ![Apparent wind angle over 24 hours](docs/screenshots/awa-24h.png)
+
+## Wind steering
+
+A square dial for steering by the wind, bow always up. In its default
+compass mode the card turns with the heading; set to wind angles it shows 0
+to 180 degrees port and starboard instead. On the dial:
+
+![Wind steering dial](docs/screenshots/wind-steering.png)
+
+- the apparent wind (blue pointer, **A**) and the true wind (orange marker,
+  **T**), with AWS, TWS, AWA and TWA in the corners;
+- dashed close-hauled lines for both tacks: red is the heading on port tack,
+  green on starboard tack, at the close-hauled angle off the true wind
+  (45 degrees unless set otherwise);
+- the wind shift fan: how far the true wind direction swung over the last
+  minute (or the window you choose), so a lift or a header shows at a glance;
+- the next waypoint (purple dot) when a destination is active, course over
+  ground (pink diamond) when the boat is moving, the current as an arrow
+  with its drift, and the rudder angle as a bar under the dial.
+
+Press and hold the dial to choose the dial type, true or magnetic north,
+true wind through the water or over the ground, the close-hauled angle, the
+shift window, and which marks to show. Values older than ten seconds are
+hidden rather than shown stale. It reads standard Signal K paths:
+`navigation.headingTrue` (or `headingMagnetic`), `environment.wind.*`,
+`navigation.courseOverGroundTrue`, `navigation.speedOverGround`,
+`navigation.course.calcValues.bearingTrue`, `environment.current.setTrue` and
+`drift`, and `steering.rudderAngle`.
 
 ## Requirements
 
