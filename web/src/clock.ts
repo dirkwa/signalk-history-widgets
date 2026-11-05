@@ -7,19 +7,20 @@ import { installLongPress, followNightMode } from './host.js'
 import {
   CLOCK_PATHS,
   boatZone,
-  clockCorrection,
+  GpsClock,
   clockText,
   parseClockConfig,
   type ClockConfig
 } from './clock-model.js'
 import { CLOCK_DAY, CLOCK_NIGHT, drawClock } from './clock-render.js'
+import { fetchValue } from './signalk.js'
 import './styles.css'
 
 const canvas = document.createElement('canvas')
 document.getElementById('root')?.append(canvas)
 let config: ClockConfig = parseClockConfig({})
 let night = false
-let correction = 0
+const gps = new GpsClock()
 let region: unknown
 let offset: unknown
 let drawQueued = false
@@ -37,7 +38,7 @@ function render(): void {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
-  const text = clockText(Date.now() + correction, config, boatZone(region, offset))
+  const text = clockText(Date.now() + gps.correction, config, boatZone(region, offset))
   drawClock(ctx, rect.width, rect.height, {
     title: config.label || text.zoneName,
     time: text.time,
@@ -55,7 +56,7 @@ function queueRender(): void {
 /** Redraws just after each second turns, so the display never lags a tick. */
 function tick(): void {
   queueRender()
-  const now = Date.now() + correction
+  const now = Date.now() + gps.correction
   setTimeout(tick, 1000 - (now % 1000) + 20)
 }
 
@@ -79,11 +80,18 @@ async function main(client: ExtensionClient): Promise<void> {
   }).catch((err: unknown) => {
     console.warn('clock: night mode unavailable', err)
   })
-  config = parseClockConfig(await client.state.get())
+  // The stream carries changes only, and the boat's zone rarely changes, so
+  // its current value is read once; GPS time is only taken live, since a
+  // stored reading is old by the time it is read.
+  ;[config, region, offset] = await Promise.all([
+    client.state.get().then(parseClockConfig),
+    fetchValue(CLOCK_PATHS.region),
+    fetchValue(CLOCK_PATHS.offset)
+  ])
   tick()
   await client.signalk.subscribe(Object.values(CLOCK_PATHS), (ev) => {
     if (ev.path === CLOCK_PATHS.gpsTime) {
-      correction = clockCorrection(Date.now(), ev.value) ?? correction
+      gps.read(Date.now(), ev.value)
     } else if (ev.path === CLOCK_PATHS.region) {
       region = ev.value
     } else {

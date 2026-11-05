@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   CLOCK_DEFAULTS,
-  CORRECT_BEYOND_MS,
   boatZone,
-  clockCorrection,
+  GpsClock,
   clockText,
   parseClockConfig
 } from '../src/clock-model.js'
@@ -54,17 +53,38 @@ describe('boatZone', () => {
   })
 })
 
-describe('clockCorrection', () => {
-  it('corrects a screen clock that is clearly off', () => {
-    const gps = new Date(NOW).toISOString()
-    expect(clockCorrection(NOW - 3_600_000, gps)).toBe(3_600_000)
-    expect(clockCorrection(NOW + 5000, gps)).toBe(-5000)
+describe('GpsClock', () => {
+  const iso = (t: number) => new Date(t).toISOString()
+  const HOUR = 3_600_000
+
+  it('corrects a screen clock that is clearly off once GPS time proves live', () => {
+    const clock = new GpsClock()
+    // The screen runs an hour slow.
+    expect(clock.read(NOW - HOUR, iso(NOW))).toBe(0)
+    expect(clock.read(NOW - HOUR + 1000, iso(NOW + 1000))).toBe(HOUR)
   })
 
-  it('leaves delivery delay alone and ignores what is not a time', () => {
-    expect(clockCorrection(NOW + CORRECT_BEYOND_MS, new Date(NOW).toISOString())).toBe(0)
-    expect(clockCorrection(NOW, 'soon')).toBeUndefined()
-    expect(clockCorrection(NOW, 12)).toBeUndefined()
+  it('leaves delivery delay alone', () => {
+    const clock = new GpsClock()
+    clock.read(NOW + 1500, iso(NOW))
+    expect(clock.read(NOW + 2600, iso(NOW + 1000))).toBe(0)
+  })
+
+  it('never moves the clock for a replayed or stopped GPS time', () => {
+    const clock = new GpsClock()
+    // A reading from hours ago, then the same one again.
+    clock.read(NOW, iso(NOW - 5 * HOUR))
+    expect(clock.read(NOW + 1000, iso(NOW - 5 * HOUR))).toBe(0)
+    // A jump that does not match the screen's own step.
+    expect(clock.read(NOW + 2000, iso(NOW))).toBe(0)
+  })
+
+  it('keeps the last correction through readings it cannot use', () => {
+    const clock = new GpsClock()
+    clock.read(NOW - HOUR, iso(NOW))
+    clock.read(NOW - HOUR + 1000, iso(NOW + 1000))
+    expect(clock.read(NOW, 'soon')).toBe(HOUR)
+    expect(clock.read(NOW, 12)).toBe(HOUR)
   })
 })
 

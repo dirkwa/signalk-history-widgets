@@ -71,17 +71,42 @@ export function boatZone(region: unknown, offset: unknown): ZoneSource {
 /** A screen clock this far off GPS time is corrected; closer, it is trusted. */
 export const CORRECT_BEYOND_MS = 2000
 
+/** Two GPS times this far apart in the screen's time still count as live. */
+export const LIVE_STEP_MS = 60_000
+/** How much two live GPS times may disagree with the screen about their gap. */
+export const STEP_TOLERANCE_MS = 1000
+
 /**
- * How far to move the screen's clock, from a GPS time that arrived at
- * `arrival`. Screens without a network or a real-time clock can boot hours
- * off; small differences are delivery delay and are left alone.
+ * How far to move the screen's clock to match GPS time. Screens without a
+ * network or a real-time clock can boot hours off; small differences are
+ * delivery delay and are left alone. A GPS time counts only once the next
+ * one confirms it is live: both must advance as far as the screen's clock
+ * did between their arrivals. A replayed old reading, or one from a GPS that
+ * has since gone quiet, is never followed by such a step, so it never moves
+ * the clock.
  */
-export function clockCorrection(arrival: number, gpsTime: unknown): number | undefined {
-  if (typeof gpsTime !== 'string') return undefined
-  const gps = Date.parse(gpsTime)
-  if (!Number.isFinite(gps)) return undefined
-  const offset = gps - arrival
-  return Math.abs(offset) > CORRECT_BEYOND_MS ? offset : 0
+export class GpsClock {
+  correction = 0
+  private last: { arrival: number; gps: number } | undefined
+
+  /** Takes a GPS time that arrived at `arrival` on the screen's clock. */
+  read(arrival: number, gpsTime: unknown): number {
+    const gps = typeof gpsTime === 'string' ? Date.parse(gpsTime) : NaN
+    if (!Number.isFinite(gps)) return this.correction
+    const last = this.last
+    this.last = { arrival, gps }
+    if (!last) return this.correction
+    const step = gps - last.gps
+    const live =
+      step > 0 &&
+      step <= LIVE_STEP_MS &&
+      Math.abs(step - (arrival - last.arrival)) <= STEP_TOLERANCE_MS
+    if (live) {
+      const offset = gps - arrival
+      this.correction = Math.abs(offset) > CORRECT_BEYOND_MS ? offset : 0
+    }
+    return this.correction
+  }
 }
 
 function offsetName(minutes: number): string {
