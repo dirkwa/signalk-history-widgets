@@ -26,14 +26,15 @@ function fakeApp() {
 }
 
 describe('manifest', () => {
-  it('offers a tall and a wide strip, the wind steering dial and a tank', () => {
+  it('offers a tall and a wide strip, the wind steering dial, a tank and a battery', () => {
     const m = buildManifest('1.0.0')
     expect(m.apiVersion).toBe('1')
     expect(m.widgets.map((w) => [w.id, w.size, w.configPanel])).toEqual([
       ['strip', '1x2', 'strip-config'],
       ['strip-wide', '2x2', 'strip-config'],
       ['wind-steering', '2x2', 'wind-steering-config'],
-      ['tank', '1x2', 'tank-config']
+      ['tank', '1x2', 'tank-config'],
+      ['battery', '1x2', 'battery-config']
     ])
     for (const w of m.widgets) {
       expect(w.url.startsWith(`${ASSET_BASE}/`)).toBe(true)

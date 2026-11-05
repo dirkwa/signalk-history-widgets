@@ -1,9 +1,10 @@
-// Draws the tank: an upright glass cylinder, filled to the level in the colour
-// of the zone the level is in, with the zone edges marked beside it. The
-// shading (edges darker than the middle, a lit surface, a glint on the glass)
-// gives it a light 3D look without leaving the 2D canvas.
+// Draws a fill level: an upright glass cylinder (3D) or a plain bar (flat),
+// filled in the colour of the zone the level is in, with the zone edges marked
+// beside it. In 3D the shading (edges darker than the middle, a lit surface, a
+// glint on the glass) gives the light depth without leaving the 2D canvas. A
+// battery gets a terminal on top.
 
-import type { Level } from './tank-model.js'
+import type { Level, LevelKind, LevelStyle } from './level-model.js'
 
 interface Liquid {
   edge: string
@@ -11,7 +12,7 @@ interface Liquid {
   surface: string
 }
 
-export interface TankPalette {
+export interface LevelPalette {
   card: string
   text: string
   muted: string
@@ -22,7 +23,7 @@ export interface TankPalette {
   mark: Record<Level, string>
 }
 
-export const TANK_DAY: TankPalette = {
+export const LEVEL_DAY: LevelPalette = {
   card: 'rgba(20, 26, 32, 0.78)',
   text: '#e8edf2',
   muted: '#9fb3c4',
@@ -38,7 +39,7 @@ export const TANK_DAY: TankPalette = {
 }
 
 // Night keeps the three colours, dark enough not to spoil night vision.
-export const TANK_NIGHT: TankPalette = {
+export const LEVEL_NIGHT: LevelPalette = {
   card: 'rgba(8, 0, 0, 0.85)',
   text: '#d32f2f',
   muted: '#8e2424',
@@ -53,17 +54,19 @@ export const TANK_NIGHT: TankPalette = {
   mark: { ok: '#2e5d31', warn: '#7a6a10', alarm: '#b02a2a' }
 }
 
-export interface TankFrame {
+export interface LevelFrame {
   title: string
   /** 0..1, or undefined while no current reading is in. */
   fraction: number | undefined
   level: Level
   /** The level as shown, e.g. `42 %`. */
   valueText: string
-  /** The volume left, e.g. `168 l`; blank when not shown. */
-  volumeText: string
+  /** The volume left or the voltage, e.g. `168 l`; blank when not shown. */
+  detailText: string
+  kind: LevelKind
+  style: LevelStyle
   marks: { at: number; level: Level }[]
-  palette: TankPalette
+  palette: LevelPalette
 }
 
 function roundRect(
@@ -131,33 +134,22 @@ function sideShade(
   return g
 }
 
-export function drawTank(ctx: CanvasRenderingContext2D, w: number, h: number, f: TankFrame): void {
+interface Box {
+  cx: number
+  rx: number
+  top: number
+  bottom: number
+}
+
+/** The level's height in the box, clamped to it. */
+function surfaceAt(b: Box, fraction: number): number {
+  return b.bottom - Math.min(1, Math.max(0, fraction)) * (b.bottom - b.top)
+}
+
+function draw3d(ctx: CanvasRenderingContext2D, b: Box, f: LevelFrame): void {
   const p = f.palette
-  ctx.clearRect(0, 0, w, h)
-  roundRect(ctx, 0, 0, w, h, Math.min(10, w / 10))
-  ctx.fillStyle = p.card
-  ctx.fill()
-
-  const pad = Math.max(6, Math.min(w, h) * 0.06)
-  const titleSize = Math.max(10, Math.min(w * 0.11, h * 0.06))
-  const valueSize = Math.max(14, Math.min(w * 0.2, h * 0.11))
-  const volumeSize = Math.max(9, valueSize * 0.5)
-
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'top'
-  ctx.fillStyle = p.muted
-  fitText(ctx, f.title, titleSize, w - 2 * pad)
-  ctx.fillText(f.title, w / 2, pad)
-
-  const footer = valueSize + (f.volumeText ? volumeSize * 1.2 : 0) + pad
-  const areaTop = pad + titleSize * 1.5
-  const areaBottom = h - footer - pad * 0.5
-  const rx = Math.min(w * 0.27, (areaBottom - areaTop) * 0.4)
+  const { cx, rx, top, bottom } = b
   const ry = rx * 0.22
-  const cx = w / 2 - rx * 0.15
-  const top = areaTop + ry
-  const bottom = areaBottom - ry
-  if (bottom - top < 4) return
 
   // The far wall, seen through the glass.
   bodyPath(ctx, cx, rx, ry, top, bottom)
@@ -166,7 +158,7 @@ export function drawTank(ctx: CanvasRenderingContext2D, w: number, h: number, f:
 
   if (f.fraction !== undefined) {
     const liquid = p.liquid[f.level]
-    const surface = bottom - Math.min(1, Math.max(0, f.fraction)) * (bottom - top)
+    const surface = surfaceAt(b, f.fraction)
     bodyPath(ctx, cx, rx, ry, surface, bottom)
     ctx.fillStyle = sideShade(ctx, cx, rx, liquid.edge, liquid.middle)
     ctx.fill()
@@ -192,9 +184,98 @@ export function drawTank(ctx: CanvasRenderingContext2D, w: number, h: number, f:
   ctx.ellipse(cx, top, rx, ry, 0, 0, Math.PI * 2)
   ctx.stroke()
 
+  if (f.kind === 'battery') {
+    // The terminal: a small cylinder standing on the lid.
+    const tx = rx * 0.32
+    const ty = tx * 0.22
+    const height = rx * 0.22
+    bodyPath(ctx, cx, tx, ty, top - height, top)
+    ctx.fillStyle = sideShade(ctx, cx, tx, p.glassEdge, p.text)
+    ctx.fill()
+    ctx.beginPath()
+    ctx.ellipse(cx, top - height, tx, ty, 0, 0, Math.PI * 2)
+    ctx.fillStyle = p.text
+    ctx.fill()
+  }
+}
+
+function drawFlat(ctx: CanvasRenderingContext2D, b: Box, f: LevelFrame): void {
+  const p = f.palette
+  const { cx, rx, top, bottom } = b
+  const radius = Math.min(rx * 0.25, 8)
+  const line = Math.max(1, rx * 0.04)
+
+  roundRect(ctx, cx - rx, top, 2 * rx, bottom - top, radius)
+  ctx.fillStyle = p.glass
+  ctx.fill()
+
+  if (f.fraction !== undefined) {
+    const surface = surfaceAt(b, f.fraction)
+    ctx.save()
+    roundRect(ctx, cx - rx, top, 2 * rx, bottom - top, radius)
+    ctx.clip()
+    ctx.fillStyle = p.liquid[f.level].middle
+    ctx.fillRect(cx - rx, surface, 2 * rx, bottom - surface)
+    ctx.restore()
+  }
+
+  ctx.lineWidth = line
+  ctx.strokeStyle = p.glassEdge
+  roundRect(ctx, cx - rx, top, 2 * rx, bottom - top, radius)
+  ctx.stroke()
+
+  if (f.kind === 'battery') {
+    const tw = rx * 0.6
+    const th = rx * 0.18
+    roundRect(ctx, cx - tw / 2, top - th, tw, th, Math.min(th / 2, 3))
+    ctx.fillStyle = p.glassEdge
+    ctx.fill()
+  }
+}
+
+export function drawLevel(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  f: LevelFrame
+): void {
+  const p = f.palette
+  ctx.clearRect(0, 0, w, h)
+  roundRect(ctx, 0, 0, w, h, Math.min(10, w / 10))
+  ctx.fillStyle = p.card
+  ctx.fill()
+
+  const pad = Math.max(6, Math.min(w, h) * 0.06)
+  const titleSize = Math.max(10, Math.min(w * 0.11, h * 0.06))
+  const valueSize = Math.max(14, Math.min(w * 0.2, h * 0.11))
+  const detailSize = Math.max(9, valueSize * 0.5)
+
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'top'
+  ctx.fillStyle = p.muted
+  fitText(ctx, f.title, titleSize, w - 2 * pad)
+  ctx.fillText(f.title, w / 2, pad)
+
+  const footer = valueSize + (f.detailText ? detailSize * 1.2 : 0) + pad
+  const areaTop = pad + titleSize * 1.5
+  const areaBottom = h - footer - pad * 0.5
+  const rx = Math.min(w * 0.27, (areaBottom - areaTop) * 0.4)
+  // Room above the body for the 3D lid and the battery terminal.
+  const headroom = rx * (f.style === '3d' ? 0.22 : 0) + (f.kind === 'battery' ? rx * 0.22 : 0)
+  const box: Box = {
+    cx: w / 2 - rx * 0.15,
+    rx,
+    top: areaTop + headroom,
+    bottom: areaBottom - (f.style === '3d' ? rx * 0.22 : 0)
+  }
+  if (box.bottom - box.top < 4) return
+
+  if (f.style === 'flat') drawFlat(ctx, box, f)
+  else draw3d(ctx, box, f)
+
   // Quarter ticks and the zone edges on the right.
-  const tickX = cx + rx + Math.max(3, rx * 0.12)
-  const yAt = (at: number) => bottom - at * (bottom - top)
+  const tickX = box.cx + rx + Math.max(3, rx * 0.12)
+  const yAt = (at: number) => surfaceAt(box, at)
   ctx.lineCap = 'round'
   ctx.strokeStyle = p.muted
   ctx.lineWidth = Math.max(1, rx * 0.03)
@@ -216,11 +297,11 @@ export function drawTank(ctx: CanvasRenderingContext2D, w: number, h: number, f:
   ctx.textBaseline = 'alphabetic'
   ctx.fillStyle = f.fraction === undefined ? p.muted : p.text
   fitText(ctx, f.valueText, valueSize, w - 2 * pad, 'bold')
-  const valueBase = h - pad - (f.volumeText ? volumeSize * 1.2 : 0)
+  const valueBase = h - pad - (f.detailText ? detailSize * 1.2 : 0)
   ctx.fillText(f.valueText, w / 2, valueBase)
-  if (f.volumeText) {
+  if (f.detailText) {
     ctx.fillStyle = p.muted
-    fitText(ctx, f.volumeText, volumeSize, w - 2 * pad)
-    ctx.fillText(f.volumeText, w / 2, h - pad)
+    fitText(ctx, f.detailText, detailSize, w - 2 * pad)
+    ctx.fillText(f.detailText, w / 2, h - pad)
   }
 }

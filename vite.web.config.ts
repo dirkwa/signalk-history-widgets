@@ -20,7 +20,9 @@ export default defineConfig({
         steer: `${here}web/steer.html`,
         'steer-config': `${here}web/steer-config.html`,
         tank: `${here}web/tank.html`,
-        'tank-config': `${here}web/tank-config.html`
+        'tank-config': `${here}web/tank-config.html`,
+        battery: `${here}web/battery.html`,
+        'battery-config': `${here}web/battery-config.html`
       }
     }
   },
