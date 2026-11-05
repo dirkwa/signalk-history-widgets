@@ -65,10 +65,14 @@ Press and hold the dial to choose the dial type, true or magnetic north,
 true wind through the water or over the ground, the close-hauled angle, the
 shift window, and which marks to show. Values older than ten seconds are
 hidden rather than shown stale. It reads standard Signal K paths:
-`navigation.headingTrue` (or `headingMagnetic`), `environment.wind.*`,
-`navigation.courseOverGroundTrue`, `navigation.speedOverGround`,
-`navigation.course.calcValues.bearingTrue`, `environment.current.setTrue` and
-`drift`, and `steering.rudderAngle`.
+`navigation.headingTrue`, `navigation.courseOverGroundTrue`,
+`navigation.course.calcValues.bearingTrue` and `environment.current.setTrue`
+(with magnetic north `navigation.headingMagnetic`,
+`navigation.courseOverGroundMagnetic`,
+`navigation.course.calcValues.bearingMagnetic` and
+`environment.current.setMagnetic`), plus `environment.wind.*`,
+`navigation.speedOverGround`, `environment.current.drift` and
+`steering.rudderAngle`.
 
 ## Requirements
 

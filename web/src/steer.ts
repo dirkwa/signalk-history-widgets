@@ -161,11 +161,6 @@ function recordShift(s: State, now: number): void {
 
 async function apply(client: ExtensionClient): Promise<void> {
   const mine = ++generation
-  if (unsubscribe) {
-    const u = unsubscribe
-    unsubscribe = undefined
-    await u().catch(() => undefined)
-  }
   const config = parseSteerConfig(await client.state.get())
   const paths = steerPaths(config.north)
   const meta = await fetchMeta(paths.speedApparent)
@@ -174,16 +169,16 @@ async function apply(client: ExtensionClient): Promise<void> {
     config,
     values: new Map(),
     shift: new ShiftWindow(config.shiftSeconds * 1000),
-    speed: resolveDisplay(meta ?? { units: 'm/s' }, undefined, 1)
+    // Wind speeds are m/s in Signal K; without it the readouts lose their unit.
+    speed: resolveDisplay({ ...meta, units: meta?.units ?? 'm/s' }, undefined, 1)
   }
-  state = s
-  queueRender()
   // With true north, the heading and the true heading are the same path.
   const byPath = new Map<string, SteerKey[]>()
   for (const [key, path] of Object.entries(paths) as [SteerKey, string][]) {
     byPath.set(path, [...(byPath.get(path) ?? []), key])
   }
-  unsubscribe = await client.signalk.subscribe([...byPath.keys()], (ev) => {
+  // The old subscription keeps the dial live until the new one is in place.
+  const next = await client.signalk.subscribe([...byPath.keys()], (ev) => {
     const keys = byPath.get(ev.path)
     if (!keys || typeof ev.value !== 'number' || !Number.isFinite(ev.value)) return
     const now = Date.now()
@@ -191,6 +186,15 @@ async function apply(client: ExtensionClient): Promise<void> {
     if (keys.some((k) => WIND_KEYS.has(k))) recordShift(s, now)
     queueRender()
   })
+  if (mine !== generation) {
+    await next().catch(() => undefined)
+    return
+  }
+  const previous = unsubscribe
+  unsubscribe = next
+  state = s
+  queueRender()
+  await previous?.().catch(() => undefined)
 }
 
 async function main(): Promise<void> {
