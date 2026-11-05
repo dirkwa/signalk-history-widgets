@@ -2,7 +2,7 @@
 
 Signal K plugin providing Plotter Extensions widgets (apiVersion 1): a history
 strip that draws one Signal K path over a configurable window, seeded from the
-History API, and a wind steering dial.
+History API, a wind steering dial and tank level and battery charge widgets.
 
 ## Layout
 
@@ -18,10 +18,15 @@ History API, and a wind steering dial.
   - `units.ts` — display units from the path's `meta.displayUnits`.
   - `history.ts` — the History API query and its parsing.
   - `render.ts` — the canvas drawing.
-  - `host.ts` — press and hold and night mode, shared by both widgets.
+  - `host.ts` — press and hold and night mode, shared by every widget.
   - `steer-model.ts`, `steer-render.ts`, `steer.ts`, `steer-config.ts` — the
     wind steering dial: settings and angle maths, drawing (every angle off the
     bow, so one drawing serves both dial types), the widget, its panel.
+  - `level-model.ts`, `level-render.ts`, `level.ts`, `level-config.ts` — the
+    tank level and battery charge widgets: settings, what each kind lists and
+    shows underneath (`KINDS`) and `meta.zones` states; the cylinder and flat
+    drawings; the widget; its touch panel (tap a tank or bank, no keyboard).
+    `tank.ts`, `battery.ts` and their `-config.ts` are the page entries.
 
 ## Contracts it depends on
 
@@ -33,7 +38,7 @@ History API, and a wind steering dial.
   for the average alone.
 - **Widget state keys** (strip: `path`, `label`, `span`, `spanUnit`, `unit`,
   `decimals`; wind steering: `dial`, `north`, `trueWind`, `closeHauled`,
-  `shiftSeconds`, `show*`) are stored by the host per instance. Renaming one loses users'
+  `shiftSeconds`, `show*`; tank and battery: `path`, `label`, `style`, `showDetail`) are stored by the host per instance. Renaming one loses users'
   settings; add new keys instead.
 
 ## Gotchas

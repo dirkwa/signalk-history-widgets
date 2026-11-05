@@ -16,12 +16,30 @@ const strip = (id: string, title: string, size: string) => ({
   lifecycle: 'whileEnabled'
 })
 
+const level = (id: string, title: string) => ({
+  id,
+  title,
+  type: 'iframe',
+  url: `${ASSET_BASE}/${id}.html`,
+  size: '1x2',
+  configPanel: `${id}-config`,
+  lifecycle: 'whileEnabled'
+})
+
+const levelPanel = (id: string, title: string) => ({
+  id: `${id}-config`,
+  title,
+  type: 'iframe',
+  url: `${ASSET_BASE}/${id}-config.html`,
+  lifecycle: 'onOpen'
+})
+
 /** The Plotter Extensions manifest (apiVersion 1). */
 export function buildManifest(version: string) {
   return {
     name: 'History Widgets',
     description:
-      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum, and a wind steering dial with the wind shift of the last minutes.',
+      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum, a wind steering dial with the wind shift of the last minutes, and tank levels and battery charge coloured by their zones.',
     version,
     apiVersion: '1',
     requires: ['widgets', 'panels.iframe', 'signalk.stream'],
@@ -37,7 +55,9 @@ export function buildManifest(version: string) {
         size: '2x2',
         configPanel: 'wind-steering-config',
         lifecycle: 'whileEnabled'
-      }
+      },
+      level('tank', 'Tank level'),
+      level('battery', 'Battery charge')
     ],
     panels: [
       {
@@ -53,7 +73,9 @@ export function buildManifest(version: string) {
         type: 'iframe',
         url: `${ASSET_BASE}/steer-config.html`,
         lifecycle: 'onOpen'
-      }
+      },
+      levelPanel('tank', 'Tank level'),
+      levelPanel('battery', 'Battery charge')
     ]
   }
 }

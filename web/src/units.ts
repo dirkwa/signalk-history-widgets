@@ -71,6 +71,9 @@ export interface DisplayUnits {
 export interface PathMeta {
   units?: string
   displayUnits?: DisplayUnits
+  displayName?: string
+  /** `meta.zones` as the server sent it; `parseZones` makes it usable. */
+  zones?: unknown
 }
 
 export interface Display {
