@@ -186,3 +186,21 @@ describe('SourceClock after a silence', () => {
     expect(c.local(later + 1000, at(later + 1000))).toBe(later + 1000)
   })
 })
+
+describe('SourceClock after a silence with a changed server clock', () => {
+  const at = (ms: number) => new Date(ms).toISOString()
+
+  it('learns the new offset from the next readings', () => {
+    const c = new SourceClock()
+    c.local(100_000, at(100_000))
+    // The server clock now runs 15 s behind; readings come in rarely.
+    let t = 100_000 + 2 * CLOCK_WINDOW_MS
+    expect(c.local(t, at(t - 15_000))).toBe(t - 15_000)
+    t += 1000
+    expect(c.local(t, at(t - 15_000))).toBe(t)
+    t += 2 * CLOCK_WINDOW_MS
+    c.local(t, at(t - 15_000))
+    t += 1000
+    expect(c.local(t, at(t - 15_000))).toBe(t)
+  })
+})
