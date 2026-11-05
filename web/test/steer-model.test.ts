@@ -3,6 +3,7 @@ import {
   DEFAULT_STEER_CONFIG,
   ShiftWindow,
   SourceClock,
+  CLOCK_WINDOW_MS,
   compassText,
   offBow,
   parseSteerConfig,
@@ -155,5 +156,21 @@ describe('SourceClock', () => {
     const c = new SourceClock()
     expect(c.local(5000, undefined)).toBe(5000)
     expect(c.local(5000, 'not a date')).toBe(5000)
+  })
+})
+
+describe('SourceClock window', () => {
+  const at = (ms: number) => new Date(ms).toISOString()
+
+  it('lets one timestamp from the future age out', () => {
+    const c = new SourceClock()
+    c.local(100_000, at(100_000))
+    // A reading stamped five minutes ahead pulls the offset down for a while.
+    c.local(101_000, at(401_000))
+    expect(c.local(102_000, at(102_000))).toBe(-198_000)
+    // Once it has left the window, fresh readings read fresh again.
+    expect(c.local(102_000 + CLOCK_WINDOW_MS, at(102_000 + CLOCK_WINDOW_MS))).toBe(
+      102_000 + CLOCK_WINDOW_MS
+    )
   })
 })

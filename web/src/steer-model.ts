@@ -194,21 +194,33 @@ export function sideText(a: number): string {
   return `${deg}° ${signed(a) < 0 ? 'P' : 'S'}`
 }
 
+/** How long one arrival-to-source gap can hold the clock offset down. */
+export const CLOCK_WINDOW_MS = 60_000
+
 /**
  * Maps a reading's source timestamp onto the local clock, so a cached
  * reading delivered on subscribe shows its real age. The server's clock may
- * differ from the browser's, so the offset between them is learnt as the
- * smallest gap seen between arrival and source time: the freshest reading
- * sets it. Without a usable timestamp the arrival time stands.
+ * differ from the browser's, so the offset between them is the smallest gap
+ * between arrival and source time over the last minute: the freshest reading
+ * sets it, and a timestamp that ran ahead only holds it down until it ages
+ * out of that window. Without a usable timestamp the arrival time stands.
  */
 export class SourceClock {
-  private offset: number | undefined
+  /** The smallest gap per second of arrival, oldest first. */
+  private gaps: { second: number; gap: number }[] = []
 
   local(arrival: number, timestamp: string | undefined): number {
     const source = timestamp === undefined ? NaN : Date.parse(timestamp)
     if (!Number.isFinite(source)) return arrival
     const gap = arrival - source
-    if (this.offset === undefined || gap < this.offset) this.offset = gap
-    return source + this.offset
+    const second = Math.floor(arrival / 1000)
+    const cutoff = second - CLOCK_WINDOW_MS / 1000
+    while ((this.gaps[0]?.second ?? Infinity) <= cutoff) this.gaps.shift()
+    const last = this.gaps.at(-1)
+    if (last?.second === second) last.gap = Math.min(last.gap, gap)
+    else this.gaps.push({ second, gap })
+    let offset = gap
+    for (const g of this.gaps) offset = Math.min(offset, g.gap)
+    return source + offset
   }
 }
