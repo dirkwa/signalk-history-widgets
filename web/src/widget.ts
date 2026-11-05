@@ -5,13 +5,13 @@
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import { isSignedAngle, labelFor, parseConfig, windowMs, type StripConfig } from './config-model.js'
 import { fetchHistory } from './history.js'
+import { followNightMode, installLongPress } from './host.js'
 import { DAY, NIGHT, draw, type Frame } from './render.js'
 import { Series, wrapAngle } from './series.js'
 import { fetchMeta } from './signalk.js'
 import { convert, resolveDisplay, type Display } from './units.js'
 import './styles.css'
 
-const LONG_PRESS_MS = 1500
 // A reading older than this shows as missing rather than as the current value.
 const STALE_MS = 60_000
 const TWO_PI = 2 * Math.PI
@@ -153,33 +153,6 @@ async function apply(client: ExtensionClient): Promise<void> {
   await seed(s, mine)
 }
 
-function installLongPress(client: ExtensionClient): void {
-  let pressTimer: ReturnType<typeof setTimeout> | undefined
-  const cancel = () => {
-    if (pressTimer) clearTimeout(pressTimer)
-    pressTimer = undefined
-  }
-  window.addEventListener('pointerdown', () => {
-    cancel()
-    pressTimer = setTimeout(() => {
-      client.call('ui.openConfigPanel').catch(() => undefined)
-    }, LONG_PRESS_MS)
-  })
-  for (const type of ['pointerup', 'pointercancel', 'pointerleave']) {
-    window.addEventListener(type, cancel)
-  }
-}
-
-async function followNightMode(client: ExtensionClient): Promise<void> {
-  if (!client.hasCapability('nightMode')) return
-  await client.subscribe(['nightMode.changed'], (_name, params) => {
-    night = (params as { enabled?: unknown } | undefined)?.enabled === true
-    queueRender()
-  })
-  night = (await client.nightMode.get()).enabled
-  queueRender()
-}
-
 async function main(): Promise<void> {
   const client = await connectExtension()
   installLongPress(client)
@@ -195,7 +168,10 @@ async function main(): Promise<void> {
       void seed(strip, generation)
     }
   })
-  await followNightMode(client).catch((err: unknown) => {
+  await followNightMode(client, (enabled) => {
+    night = enabled
+    queueRender()
+  }).catch((err: unknown) => {
     console.warn('history strip: night mode unavailable', err)
   })
   await apply(client)

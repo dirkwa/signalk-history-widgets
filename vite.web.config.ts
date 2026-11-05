@@ -16,7 +16,9 @@ export default defineConfig({
     rolldownOptions: {
       input: {
         widget: `${here}web/widget.html`,
-        config: `${here}web/config.html`
+        config: `${here}web/config.html`,
+        steer: `${here}web/steer.html`,
+        'steer-config': `${here}web/steer-config.html`
       }
     }
   },

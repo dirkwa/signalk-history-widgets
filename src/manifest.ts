@@ -21,14 +21,23 @@ export function buildManifest(version: string) {
   return {
     name: 'History Widgets',
     description:
-      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum.',
+      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum, and a wind steering dial with the wind shift of the last minutes.',
     version,
     apiVersion: '1',
     requires: ['widgets', 'panels.iframe', 'signalk.stream'],
     optional: ['nightMode'],
     widgets: [
       strip('strip', 'History strip', '1x2'),
-      strip('strip-wide', 'History strip (wide)', '2x2')
+      strip('strip-wide', 'History strip (wide)', '2x2'),
+      {
+        id: 'wind-steering',
+        title: 'Wind steering',
+        type: 'iframe',
+        url: `${ASSET_BASE}/steer.html`,
+        size: '2x2',
+        configPanel: 'wind-steering-config',
+        lifecycle: 'whileEnabled'
+      }
     ],
     panels: [
       {
@@ -36,6 +45,13 @@ export function buildManifest(version: string) {
         title: 'History strip',
         type: 'iframe',
         url: `${ASSET_BASE}/config.html`,
+        lifecycle: 'onOpen'
+      },
+      {
+        id: 'wind-steering-config',
+        title: 'Wind steering',
+        type: 'iframe',
+        url: `${ASSET_BASE}/steer-config.html`,
         lifecycle: 'onOpen'
       }
     ]

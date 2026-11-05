@@ -101,3 +101,22 @@ select {
   border-color: var(--accent);
   color: #fff;
 }
+
+.toggles {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 10px;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+}
+
+.toggle input {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+}

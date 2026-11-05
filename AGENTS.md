@@ -2,7 +2,7 @@
 
 Signal K plugin providing Plotter Extensions widgets (apiVersion 1): a history
 strip that draws one Signal K path over a configurable window, seeded from the
-History API.
+History API, and a wind steering dial.
 
 ## Layout
 
@@ -10,7 +10,7 @@ History API.
   `plugin/`). It registers a read-only `plotterExtensions` resource provider
   with the manifest (`manifest.ts`) and serves the built pages from memory at
   `/plotterext/signalk-history-widgets/` (`assets.ts`).
-- `web/` — the widget and its configuration panel (plain TypeScript and
+- `web/` — the widgets and their configuration panels (plain TypeScript and
   canvas, built by `vite.web.config.ts` into `public/`). `web/tsconfig.json`
   is its own project with DOM libs; its tests live in `web/test/`.
   - `series.ts` — the fixed-size time buckets live samples and History API rows
@@ -18,6 +18,10 @@ History API.
   - `units.ts` — display units from the path's `meta.displayUnits`.
   - `history.ts` — the History API query and its parsing.
   - `render.ts` — the canvas drawing.
+  - `host.ts` — press and hold and night mode, shared by both widgets.
+  - `steer-model.ts`, `steer-render.ts`, `steer.ts`, `steer-config.ts` — the
+    wind steering dial: settings and angle maths, drawing (every angle off the
+    bow, so one drawing serves both dial types), the widget, its panel.
 
 ## Contracts it depends on
 
@@ -27,8 +31,9 @@ History API.
 - **History API** `/signalk/v2/api/history/values` with `min`, `max` and
   `average`; a 501 means no provider. A provider that rejects min/max is asked
   for the average alone.
-- **Widget state keys** (`path`, `label`, `span`, `spanUnit`, `unit`,
-  `decimals`) are stored by the host per instance. Renaming one loses users'
+- **Widget state keys** (strip: `path`, `label`, `span`, `spanUnit`, `unit`,
+  `decimals`; wind steering: `dial`, `north`, `trueWind`, `closeHauled`,
+  `shiftSeconds`, `show*`) are stored by the host per instance. Renaming one loses users'
   settings; add new keys instead.
 
 ## Gotchas

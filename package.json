@@ -1,7 +1,7 @@
 {
   "name": "signalk-history-widgets",
   "version": "0.1.0",
-  "description": "History strip widgets for Signal K chartplotters: any value over the last minutes or hours as a vertical strip with min, average and max, like the wind history page on a sailing instrument",
+  "description": "History strip and wind steering widgets for Signal K chartplotters: any value over the last minutes or hours as a vertical strip with min, average and max, and a wind steering dial with close-hauled lines and the recent wind shift",
   "author": "Dirk Wahrheit",
   "main": "plugin/index.js",
   "type": "module",
@@ -22,7 +22,8 @@
     "signalk-category-instruments",
     "wind",
     "history",
-    "trend"
+    "trend",
+    "steering"
   ],
   "signalk": {
     "displayName": "History Widgets",
@@ -33,7 +34,8 @@
     "screenshots": [
       "./docs/screenshots/wind-strips.png",
       "./docs/screenshots/config.png",
-      "./docs/screenshots/awa-24h.png"
+      "./docs/screenshots/awa-24h.png",
+      "./docs/screenshots/wind-steering.png"
     ]
   },
   "files": [
