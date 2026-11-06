@@ -197,3 +197,28 @@ export function clockTitle(config: ClockConfig, text: ClockText): string {
   if (!config.label) return text.zoneName
   return text.fallback ? `${config.label} · ${text.zoneName}` : config.label
 }
+
+/**
+ * Runs `task` one call at a time. A call made while it runs queues a single
+ * rerun, so the last result always comes from a run that started after the
+ * last call: an older settings snapshot can never land after a newer one.
+ */
+export function serialized(task: () => Promise<void>): () => void {
+  let running = false
+  let again = false
+  const run = (): void => {
+    if (running) {
+      again = true
+      return
+    }
+    running = true
+    void task().finally(() => {
+      running = false
+      if (again) {
+        again = false
+        run()
+      }
+    })
+  }
+  return run
+}

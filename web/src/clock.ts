@@ -11,6 +11,7 @@ import {
   clockText,
   clockTitle,
   parseClockConfig,
+  serialized,
   type ClockConfig
 } from './clock-model.js'
 import { CLOCK_DAY, CLOCK_NIGHT, drawClock } from './clock-render.js'
@@ -63,7 +64,7 @@ function tick(): void {
 async function main(client: ExtensionClient): Promise<void> {
   installLongPress(client)
   new ResizeObserver(queueRender).observe(canvas)
-  await client.subscribe(['state.changed'], () => {
+  const loadSettings = serialized(() =>
     client.state
       .get()
       .then((stored) => {
@@ -71,9 +72,10 @@ async function main(client: ExtensionClient): Promise<void> {
         queueRender()
       })
       .catch((err: unknown) => {
-        console.warn('clock: settings reload failed', err)
+        console.warn('clock: settings unavailable', err)
       })
-  })
+  )
+  await client.subscribe(['state.changed'], loadSettings)
   await followNightMode(client, (enabled) => {
     night = enabled
     queueRender()
@@ -81,15 +83,7 @@ async function main(client: ExtensionClient): Promise<void> {
     console.warn('clock: night mode unavailable', err)
   })
   tick()
-  client.state
-    .get()
-    .then((stored) => {
-      config = parseClockConfig(stored)
-      queueRender()
-    })
-    .catch((err: unknown) => {
-      console.warn('clock: settings unavailable', err)
-    })
+  loadSettings()
   // The stream carries changes only, and the boat's zone rarely changes, so
   // its current value is also read once, without holding up the clock; GPS
   // time is only taken live, since a stored reading is old by the time it is

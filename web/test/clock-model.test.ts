@@ -7,7 +7,8 @@ import {
   GpsClock,
   clockText,
   clockTitle,
-  parseClockConfig
+  parseClockConfig,
+  serialized
 } from '../src/clock-model.js'
 import { fitSize } from '../src/clock-render.js'
 
@@ -166,5 +167,26 @@ describe('clockTitle', () => {
     const missing = clockText(NOW, labelled, undefined, 'en-GB')
     expect(clockTitle(labelled, missing)).toBe('Salon · Local time (no boat zone)')
     expect(clockTitle(config({ zone: 'boat' }), missing)).toBe('Local time (no boat zone)')
+  })
+})
+
+describe('serialized', () => {
+  it('runs one at a time and reruns once for calls made meanwhile', async () => {
+    const finish: (() => void)[] = []
+    let runs = 0
+    const run = serialized(() => {
+      runs++
+      return new Promise<void>((resolve) => finish.push(resolve))
+    })
+    run()
+    run()
+    run()
+    expect(runs).toBe(1)
+    finish.shift()?.()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(runs).toBe(2)
+    finish.shift()?.()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(runs).toBe(2)
   })
 })
