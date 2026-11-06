@@ -96,15 +96,8 @@ async function availableDepths(): Promise<Set<string>> {
 
 async function apply(client: ExtensionClient): Promise<void> {
   const mine = ++generation
-  // Stopped before the await, so an older apply() resuming cannot clear the
-  // timer a newer one set.
-  clearInterval(timer)
-  timer = undefined
-  if (unsubscribe) {
-    const u = unsubscribe
-    unsubscribe = undefined
-    await u().catch(() => undefined)
-  }
+  // The current profile keeps running until its replacement is subscribed,
+  // so a settings read that fails leaves the widget live, not frozen.
   const config = parseDepthConfig(await client.state.get())
   const path = depthPath(config, config.path ? new Set() : await availableDepths())
   const meta = await fetchMeta(path)
@@ -127,11 +120,15 @@ async function apply(client: ExtensionClient): Promise<void> {
     await next().catch(() => undefined)
     return
   }
+  // Swapped without an await in between, so no other apply() can interleave.
+  const previous = unsubscribe
+  clearInterval(timer)
   unsubscribe = next
   profile = s
   queueRender()
   // The profile scrolls even when the depth does not change.
   timer = setInterval(queueRender, Math.max(1000, s.series.bucketMs))
+  await previous?.().catch(() => undefined)
   await seed(s, mine)
 }
 
