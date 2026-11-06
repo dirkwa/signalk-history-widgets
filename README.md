@@ -32,9 +32,9 @@ placed strip to change it or remove it.
 
 ## History
 
-With a History API provider on the server (for example the KIP plugin,
-signalk-parquet or signalk-to-influxdb2) a new strip shows the whole window at
-once. Without one it starts empty and fills from live data. The configuration
+With a History API provider on the server (for example signalk-questdb, which
+the App Store suggests alongside this plugin, the KIP plugin, signalk-parquet
+or signalk-to-influxdb2) a new strip shows the whole window at once. Without one it starts empty and fills from live data. The configuration
 panel says which case applies.
 
 Directions such as true wind direction or heading read 0 to 360 and stay one
