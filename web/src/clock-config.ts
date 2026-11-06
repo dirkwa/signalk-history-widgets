@@ -80,7 +80,8 @@ async function main(): Promise<void> {
   const preview = (): string => {
     const shown = { ...config, label: labelText() }
     const t = clockText(Date.now(), shown, zone.zone())
-    return `${esc(clockTitle(shown, t))}: ${esc(t.time)}`
+    const date = config.showDate ? `, ${esc(t.date)}` : ''
+    return `${esc(clockTitle(shown, t))}: ${esc(t.time)}${date}`
   }
   const updatePreview = (): void => {
     el('preview').innerHTML = preview()
@@ -134,6 +135,12 @@ async function main(): Promise<void> {
     })
   }
   draw()
+  // The panel's page goes away when the host closes it; pagehide stops the
+  // refresh for a host that keeps the page around.
+  const refresh = setInterval(updatePreview, 1000)
+  window.addEventListener('pagehide', () => {
+    clearInterval(refresh)
+  })
   // The boat zone only feeds the preview, so the panel never waits for it.
   for (const path of [CLOCK_PATHS.region, CLOCK_PATHS.offset]) {
     void fetchValue(path).then((value) => {
