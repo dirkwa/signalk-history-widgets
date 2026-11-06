@@ -104,8 +104,9 @@ with a few taps and no keyboard. A level older than two minutes shows as
 
 The time, as large as the widget allows, with the date underneath. It shows
 this screen's time zone, UTC, or the boat's time zone as the server reports
-it (`environment.time.timezoneRegion`, or `environment.time.timezoneOffset`),
-so every screen on board shows the same time wherever its own clock is set.
+it (`environment.time.timezoneRegion`, or `environment.time.timezoneOffset`).
+While the server reports no usable boat zone, a clock set to boat time shows
+this screen's own zone instead and says so above the time.
 A screen whose clock is more than two seconds off the GPS time
 (`navigation.datetime`) follows the GPS, which keeps a display that booted
 without a network right.

@@ -68,6 +68,27 @@ export function boatZone(region: unknown, offset: unknown): ZoneSource {
   return undefined
 }
 
+/**
+ * The boat zone's two paths from both sources: the stored value read once at
+ * start and the stream. Either may arrive first; a stored value never
+ * replaces one the stream has already delivered, since it may be older.
+ */
+export class BoatZoneReadings {
+  private readonly values = new Map<string, unknown>()
+
+  live(path: string, value: unknown): void {
+    this.values.set(path, value)
+  }
+
+  stored(path: string, value: unknown): void {
+    if (!this.values.has(path)) this.values.set(path, value)
+  }
+
+  zone(): ZoneSource {
+    return boatZone(this.values.get(CLOCK_PATHS.region), this.values.get(CLOCK_PATHS.offset))
+  }
+}
+
 /** A screen clock this far off GPS time is corrected; closer, it is trusted. */
 export const CORRECT_BEYOND_MS = 2000
 
@@ -122,6 +143,8 @@ export interface ClockText {
   date: string
   /** Which zone the time is in, for the line above it. */
   zoneName: string
+  /** Boat time was chosen but the server gives no zone, so this is local time. */
+  fallback: boolean
 }
 
 /**
@@ -138,6 +161,7 @@ export function clockText(
   let timeZone: string | undefined
   let instant = now
   let zoneName: string
+  const fallback = config.zone === 'boat' && boat === undefined
   if (config.zone === 'utc') {
     timeZone = 'UTC'
     zoneName = 'UTC'
@@ -149,7 +173,7 @@ export function clockText(
     instant = now + boat.minutes * 60_000
     zoneName = `Boat time, ${offsetName(boat.minutes)}`
   } else {
-    zoneName = config.zone === 'boat' ? 'Local time (no boat zone)' : 'Local time'
+    zoneName = fallback ? 'Local time (no boat zone)' : 'Local time'
   }
   const time = new Intl.DateTimeFormat(locale, {
     timeZone,
@@ -165,5 +189,11 @@ export function clockText(
     month: 'short',
     year: 'numeric'
   }).format(instant)
-  return { time, date, zoneName }
+  return { time, date, zoneName, fallback }
+}
+
+/** The line above the time: the label if set, but never hiding a fallback. */
+export function clockTitle(config: ClockConfig, text: ClockText): string {
+  if (!config.label) return text.zoneName
+  return text.fallback ? `${config.label} · ${text.zoneName}` : config.label
 }

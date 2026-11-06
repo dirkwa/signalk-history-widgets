@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   CLOCK_DEFAULTS,
+  CLOCK_PATHS,
+  BoatZoneReadings,
   boatZone,
   GpsClock,
   clockText,
+  clockTitle,
   parseClockConfig
 } from '../src/clock-model.js'
 import { fitSize } from '../src/clock-render.js'
@@ -53,6 +56,26 @@ describe('boatZone', () => {
   })
 })
 
+describe('BoatZoneReadings', () => {
+  it('takes the stored zone until the stream reports one', () => {
+    const readings = new BoatZoneReadings()
+    expect(readings.zone()).toBeUndefined()
+    readings.stored(CLOCK_PATHS.offset, 1200)
+    expect(readings.zone()).toEqual({ minutes: 720 })
+    readings.live(CLOCK_PATHS.region, 'Pacific/Fiji')
+    expect(readings.zone()).toEqual({ region: 'Pacific/Fiji' })
+  })
+
+  it('never lets a late stored value replace a live one', () => {
+    const readings = new BoatZoneReadings()
+    readings.live(CLOCK_PATHS.region, 'Pacific/Fiji')
+    readings.stored(CLOCK_PATHS.region, 'Europe/Berlin')
+    expect(readings.zone()).toEqual({ region: 'Pacific/Fiji' })
+    readings.live(CLOCK_PATHS.region, 'Pacific/Auckland')
+    expect(readings.zone()).toEqual({ region: 'Pacific/Auckland' })
+  })
+})
+
 describe('GpsClock', () => {
   const iso = (t: number) => new Date(t).toISOString()
   const HOUR = 3_600_000
@@ -93,7 +116,8 @@ describe('clockText', () => {
     expect(clockText(NOW, config({ zone: 'utc' }), undefined, 'en-GB')).toEqual({
       time: '19:45',
       date: 'Thu, 5 Nov 2026',
-      zoneName: 'UTC'
+      zoneName: 'UTC',
+      fallback: false
     })
     expect(clockText(NOW, config({ zone: 'utc', seconds: true }), undefined, 'en-GB').time).toBe(
       '19:45:30'
@@ -105,7 +129,12 @@ describe('clockText', () => {
 
   it('shows the boat zone by name or by offset, across midnight', () => {
     const fiji = clockText(NOW, config({ zone: 'boat' }), { region: 'Pacific/Fiji' }, 'en-GB')
-    expect(fiji).toEqual({ time: '07:45', date: 'Fri, 6 Nov 2026', zoneName: 'Boat time, Fiji' })
+    expect(fiji).toEqual({
+      time: '07:45',
+      date: 'Fri, 6 Nov 2026',
+      zoneName: 'Boat time, Fiji',
+      fallback: false
+    })
     const offset = clockText(NOW, config({ zone: 'boat' }), { minutes: -330 }, 'en-GB')
     expect(offset).toMatchObject({ time: '14:15', zoneName: 'Boat time, UTC-5:30' })
   })
@@ -126,5 +155,16 @@ describe('fitSize', () => {
     expect(fitSize(measure, 500, 80)).toBe(80)
     expect(fitSize(measure, 200, 80)).toBe(40)
     expect(fitSize(measure, 1, 80)).toBe(7)
+  })
+})
+
+describe('clockTitle', () => {
+  it('shows the label, but keeps the fallback status beside it', () => {
+    const labelled = config({ zone: 'boat', label: 'Salon' })
+    const fiji = clockText(NOW, labelled, { region: 'Pacific/Fiji' }, 'en-GB')
+    expect(clockTitle(labelled, fiji)).toBe('Salon')
+    const missing = clockText(NOW, labelled, undefined, 'en-GB')
+    expect(clockTitle(labelled, missing)).toBe('Salon · Local time (no boat zone)')
+    expect(clockTitle(config({ zone: 'boat' }), missing)).toBe('Local time (no boat zone)')
   })
 })

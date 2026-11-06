@@ -6,9 +6,10 @@ import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/e
 import { installLongPress, followNightMode } from './host.js'
 import {
   CLOCK_PATHS,
-  boatZone,
+  BoatZoneReadings,
   GpsClock,
   clockText,
+  clockTitle,
   parseClockConfig,
   type ClockConfig
 } from './clock-model.js'
@@ -21,8 +22,7 @@ document.getElementById('root')?.append(canvas)
 let config: ClockConfig = parseClockConfig({})
 let night = false
 const gps = new GpsClock()
-let region: unknown
-let offset: unknown
+const zone = new BoatZoneReadings()
 let drawQueued = false
 
 function render(): void {
@@ -38,9 +38,9 @@ function render(): void {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
-  const text = clockText(Date.now() + gps.correction, config, boatZone(region, offset))
+  const text = clockText(Date.now() + gps.correction, config, zone.zone())
   drawClock(ctx, rect.width, rect.height, {
-    title: config.label || text.zoneName,
+    title: clockTitle(config, text),
     time: text.time,
     date: config.showDate ? text.date : '',
     palette: night ? CLOCK_NIGHT : CLOCK_DAY
@@ -80,22 +80,31 @@ async function main(client: ExtensionClient): Promise<void> {
   }).catch((err: unknown) => {
     console.warn('clock: night mode unavailable', err)
   })
-  // The stream carries changes only, and the boat's zone rarely changes, so
-  // its current value is read once; GPS time is only taken live, since a
-  // stored reading is old by the time it is read.
-  ;[config, region, offset] = await Promise.all([
-    client.state.get().then(parseClockConfig),
-    fetchValue(CLOCK_PATHS.region),
-    fetchValue(CLOCK_PATHS.offset)
-  ])
   tick()
+  client.state
+    .get()
+    .then((stored) => {
+      config = parseClockConfig(stored)
+      queueRender()
+    })
+    .catch((err: unknown) => {
+      console.warn('clock: settings unavailable', err)
+    })
+  // The stream carries changes only, and the boat's zone rarely changes, so
+  // its current value is also read once, without holding up the clock; GPS
+  // time is only taken live, since a stored reading is old by the time it is
+  // read.
+  for (const path of [CLOCK_PATHS.region, CLOCK_PATHS.offset]) {
+    void fetchValue(path).then((value) => {
+      zone.stored(path, value)
+      queueRender()
+    })
+  }
   await client.signalk.subscribe(Object.values(CLOCK_PATHS), (ev) => {
     if (ev.path === CLOCK_PATHS.gpsTime) {
       gps.read(Date.now(), ev.value)
-    } else if (ev.path === CLOCK_PATHS.region) {
-      region = ev.value
     } else {
-      offset = ev.value
+      zone.live(ev.path, ev.value)
     }
     queueRender()
   })
