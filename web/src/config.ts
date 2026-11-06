@@ -3,7 +3,13 @@
 // instance's settings, and the widget redraws on the state.changed event.
 
 import { connectExtension } from 'signalk-plotterext-bus/extension'
-import { COMMON_PATHS, parseConfig, type StripConfig } from './config-model.js'
+import {
+  COMMON_PATHS,
+  parseConfig,
+  spanChoices,
+  windowMs,
+  type StripConfig
+} from './config-model.js'
 import { fetchHistoryProviders, fetchNumericPaths, type PathInfo } from './signalk.js'
 import { CONVERSIONS } from './units.js'
 import './config.css'
@@ -42,14 +48,13 @@ function form(config: StripConfig, paths: PathInfo[], providers: string[]): stri
     <label class="row"><span>Label</span>
       <input id="label" value="${esc(config.label)}" placeholder="Automatic">
     </label>
-    <div class="row"><span>Time span</span>
-      <div class="pair">
-        <input id="span" type="number" min="1" step="1" value="${config.span}">
-        <select id="spanUnit">
-          <option value="min"${config.spanUnit === 'min' ? ' selected' : ''}>minutes</option>
-          <option value="h"${config.spanUnit === 'h' ? ' selected' : ''}>hours</option>
-        </select>
-      </div>
+    <div class="row"><span id="span-title">Time span</span>
+      <div class="chips" role="group" aria-labelledby="span-title">${spanChoices(config)
+        .map(
+          (c) =>
+            `<button type="button" class="chip${windowMs({ ...config, ...c }) === windowMs(config) ? ' on' : ''}" aria-pressed="${windowMs({ ...config, ...c }) === windowMs(config)}" data-span="${c.span}" data-span-unit="${c.spanUnit}">${c.label}</button>`
+        )
+        .join('')}</div>
     </div>
     <label class="row"><span>Units</span><select id="unit"></select></label>
     <label class="row"><span>Decimals</span>
@@ -87,12 +92,12 @@ function fillUnits(paths: PathInfo[], selected: string): void {
 }
 
 function read(): Record<string, unknown> {
-  const span = Number(input('span').value)
+  const span = document.querySelector<HTMLButtonElement>('[data-span].on')
   return {
     path: input('path').value.trim(),
     label: input('label').value.trim(),
-    span: Number.isFinite(span) && span > 0 ? span : 30,
-    spanUnit: input('spanUnit').value,
+    span: Number(span?.dataset.span),
+    spanUnit: span?.dataset.spanUnit,
     unit: input('unit').value,
     decimals: Number(input('decimals').value)
   }
@@ -114,16 +119,25 @@ async function main(): Promise<void> {
   const pathInput = input('path')
   const onPath = () => {
     fillUnits(paths, input('unit').value)
-    for (const chip of document.querySelectorAll<HTMLButtonElement>('.chip')) {
+    for (const chip of document.querySelectorAll<HTMLButtonElement>('[data-path]')) {
       chip.classList.toggle('on', chip.dataset.path === pathInput.value.trim())
     }
   }
   pathInput.addEventListener('change', onPath)
   pathInput.addEventListener('input', onPath)
-  for (const chip of document.querySelectorAll<HTMLButtonElement>('.chip')) {
+  for (const chip of document.querySelectorAll<HTMLButtonElement>('[data-path]')) {
     chip.addEventListener('click', () => {
       pathInput.value = chip.dataset.path ?? ''
       onPath()
+    })
+  }
+  const spans = document.querySelectorAll<HTMLButtonElement>('[data-span]')
+  for (const chip of spans) {
+    chip.addEventListener('click', () => {
+      for (const other of spans) {
+        other.classList.toggle('on', other === chip)
+        other.setAttribute('aria-pressed', String(other === chip))
+      }
     })
   }
 

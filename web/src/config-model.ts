@@ -79,3 +79,41 @@ export function isSignedAngle(path: string): boolean {
   const leaf = path.split('.').pop() ?? ''
   return !/direction|heading|course|bearing/i.test(leaf)
 }
+
+export interface SpanChoice {
+  span: number
+  spanUnit: SpanUnit
+  label: string
+}
+
+const choice = (span: number, spanUnit: SpanUnit): SpanChoice => ({
+  span,
+  spanUnit,
+  label: `${span} ${spanUnit}`
+})
+
+/** Windows offered as buttons, from a gust to a day. */
+export const SPAN_CHOICES: readonly SpanChoice[] = [
+  choice(5, 'min'),
+  choice(15, 'min'),
+  choice(30, 'min'),
+  choice(1, 'h'),
+  choice(3, 'h'),
+  choice(6, 'h'),
+  choice(12, 'h'),
+  choice(24, 'h')
+]
+
+/**
+ * The buttons for an instance's window: the offered ones, plus the stored
+ * window when it is none of them, so a setting made before keeps showing
+ * (as the same span, whichever way it was written) and can stay as it is.
+ */
+export function spanChoices(config: StripConfig): SpanChoice[] {
+  const ms = windowMs(config)
+  if (SPAN_CHOICES.some((c) => windowMs({ ...config, ...c }) === ms)) return [...SPAN_CHOICES]
+  const own = choice(config.span, config.spanUnit)
+  return [...SPAN_CHOICES, own].sort(
+    (a, b) => windowMs({ ...config, ...a }) - windowMs({ ...config, ...b })
+  )
+}

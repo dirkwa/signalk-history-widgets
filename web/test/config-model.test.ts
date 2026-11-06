@@ -4,7 +4,9 @@ import {
   isSignedAngle,
   labelFor,
   parseConfig,
-  windowMs
+  spanChoices,
+  windowMs,
+  type StripConfig
 } from '../src/config-model.js'
 
 describe('parseConfig', () => {
@@ -52,5 +54,41 @@ describe('isSignedAngle', () => {
     expect(isSignedAngle('navigation.courseOverGroundTrue')).toBe(false)
     expect(isSignedAngle('environment.wind.angleApparent')).toBe(true)
     expect(isSignedAngle('steering.rudderAngle')).toBe(true)
+  })
+})
+
+describe('spanChoices', () => {
+  const labels = (c: StripConfig) => spanChoices(c).map((s) => s.label)
+
+  it('offers the windows from 5 minutes to 24 hours', () => {
+    expect(labels(DEFAULT_CONFIG)).toEqual([
+      '5 min',
+      '15 min',
+      '30 min',
+      '1 h',
+      '3 h',
+      '6 h',
+      '12 h',
+      '24 h'
+    ])
+  })
+
+  it('treats 60 minutes as the offered hour', () => {
+    expect(spanChoices({ ...DEFAULT_CONFIG, span: 60 })).toHaveLength(8)
+  })
+
+  it('keeps a window set before, in its place', () => {
+    expect(labels({ ...DEFAULT_CONFIG, span: 45 })).toEqual([
+      '5 min',
+      '15 min',
+      '30 min',
+      '45 min',
+      '1 h',
+      '3 h',
+      '6 h',
+      '12 h',
+      '24 h'
+    ])
+    expect(labels({ ...DEFAULT_CONFIG, span: 48, spanUnit: 'h' }).at(-1)).toBe('48 h')
   })
 })
