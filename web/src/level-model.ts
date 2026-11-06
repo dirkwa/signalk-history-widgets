@@ -13,7 +13,7 @@ export interface LevelConfig {
   /** Blank shows the name from the path's metadata or the path itself. */
   label: string
   style: LevelStyle
-  /** Show the volume left (tank) or the voltage (battery) under the level. */
+  /** Show the volume left (tank) or the voltage and current (battery) under the level. */
   showDetail: boolean
 }
 
@@ -62,6 +62,8 @@ export interface KindSpec {
   detailDecimals: number
   /** A capacity stays true once sent; a voltage goes stale like the level. */
   detailAges: boolean
+  /** The path of the current in and out of a battery bank; tanks have none. */
+  flowPath?: (levelPath: string) => string
   /** The detail switch in the panel. */
   detailTitle: string
 }
@@ -97,8 +99,21 @@ export const KINDS: Record<LevelKind, KindSpec> = {
     detailUnits: 'V',
     detailDecimals: 1,
     detailAges: true,
-    detailTitle: "Voltage (needs the bank's voltage)"
+    flowPath: (path) => path.replace(/\.capacity\.stateOfCharge$/, '.current'),
+    detailTitle: "Voltage and current (needs the bank's readings)"
   }
+}
+
+/** Below this many amps a bank counts as neither charging nor discharging. */
+export const IDLE_AMPS = 0.05
+
+export type Flow = 'charging' | 'discharging' | 'idle'
+
+/** A battery's current is positive while charging (Signal K convention). */
+export function flowOf(amps: number): Flow {
+  if (amps >= IDLE_AMPS) return 'charging'
+  if (amps <= -IDLE_AMPS) return 'discharging'
+  return 'idle'
 }
 
 /** The Signal K zone states, mildest first. */

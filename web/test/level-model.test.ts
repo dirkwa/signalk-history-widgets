@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  flowOf,
   KINDS,
   LEVEL_DEFAULTS,
   levelOf,
@@ -74,6 +75,16 @@ describe('batteries', () => {
     )
     expect(battery.detail(0.82, 12.8)).toBe(12.8)
     expect(battery.detailAges).toBe(true)
+  })
+
+  it("shows the bank's current, charging when positive", () => {
+    expect(battery.flowPath?.('electrical.batteries.house.capacity.stateOfCharge')).toBe(
+      'electrical.batteries.house.current'
+    )
+    expect(flowOf(12.5)).toBe('charging')
+    expect(flowOf(-3.2)).toBe('discharging')
+    expect(flowOf(0.01)).toBe('idle')
+    expect(flowOf(-0.01)).toBe('idle')
   })
 
   it('names a bank from its path', () => {
