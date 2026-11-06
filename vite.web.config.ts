@@ -22,7 +22,9 @@ export default defineConfig({
         tank: `${here}web/tank.html`,
         'tank-config': `${here}web/tank-config.html`,
         battery: `${here}web/battery.html`,
-        'battery-config': `${here}web/battery-config.html`
+        'battery-config': `${here}web/battery-config.html`,
+        clock: `${here}web/clock.html`,
+        'clock-config': `${here}web/clock-config.html`
       }
     }
   },

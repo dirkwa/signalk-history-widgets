@@ -40,7 +40,7 @@ export function buildManifest(version: string) {
   return {
     name: 'History Widgets',
     description:
-      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum, a wind steering dial with the wind shift of the last minutes, and tank levels and battery charge coloured by their zones.',
+      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum, a wind steering dial with the wind shift of the last minutes, tank levels and battery charge coloured by their zones, and a clock in local, UTC or boat time.',
     version,
     apiVersion: '1',
     requires: ['widgets', 'panels.iframe', 'signalk.stream'],
@@ -60,7 +60,16 @@ export function buildManifest(version: string) {
       level('tank', 'Tank level'),
       level('tank-small', 'Tank level (small)', '1x1', 'tank'),
       level('battery', 'Battery charge'),
-      level('battery-small', 'Battery charge (small)', '1x1', 'battery')
+      level('battery-small', 'Battery charge (small)', '1x1', 'battery'),
+      {
+        id: 'clock',
+        title: 'Clock',
+        type: 'iframe',
+        url: `${ASSET_BASE}/clock.html`,
+        size: '2x1',
+        configPanel: 'clock-config',
+        lifecycle: 'whileEnabled'
+      }
     ],
     panels: [
       {
@@ -78,7 +87,14 @@ export function buildManifest(version: string) {
         lifecycle: 'onOpen'
       },
       levelPanel('tank', 'Tank level'),
-      levelPanel('battery', 'Battery charge')
+      levelPanel('battery', 'Battery charge'),
+      {
+        id: 'clock-config',
+        title: 'Clock',
+        type: 'iframe',
+        url: `${ASSET_BASE}/clock-config.html`,
+        lifecycle: 'onOpen'
+      }
     ]
   }
 }

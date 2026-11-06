@@ -10,8 +10,8 @@ moves.
 
 ![True wind direction and speed over 30 minutes](docs/screenshots/wind-strips.png)
 
-The package also brings a **Wind steering** dial and **Tank level** and
-**Battery charge** widgets, described [below](#wind-steering).
+The package also brings a **Wind steering** dial, **Tank level** and
+**Battery charge** widgets and a **Clock**, described [below](#wind-steering).
 
 ## Use
 
@@ -99,6 +99,22 @@ current level, plus any other 0 to 100 % value, and offers the look (3D or
 flat) and whether to show the volume or voltage as buttons, so it is set up
 with a few taps and no keyboard. A level older than two minutes shows as
 `--`.
+
+## Clock
+
+The time, as large as the widget allows, with the date underneath. It shows
+this screen's time zone, UTC, or the boat's time zone as the server reports
+it (`environment.time.timezoneRegion`, or `environment.time.timezoneOffset`).
+While the server reports no usable boat zone, a clock set to boat time shows
+this screen's own zone instead and says so above the time.
+A screen whose clock is more than two seconds off the GPS time
+(`navigation.datetime`) follows the GPS, which keeps a display that booted
+without a network right.
+
+![The clock in boat time](docs/screenshots/clock.png)
+
+Press and hold the clock to choose the zone, 24 or 12 hours, and whether to
+show seconds and the date, all with buttons.
 
 ## Requirements
 
