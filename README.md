@@ -79,8 +79,9 @@ hidden rather than shown stale. It reads standard Signal K paths:
 
 A tank's level or a battery bank's state of charge as a glass cylinder or, if
 you prefer, a flat bar, with the percentage underneath. A tank that publishes
-its capacity also shows the volume left, and a battery bank its voltage, in
-the units set in the server's Unit Preferences. The colour follows the zones
+its capacity also shows the volume left, and a battery bank its voltage and
+current, in the units set in the server's Unit Preferences. A green arrow up
+means the bank is charging, a red arrow down that it is discharging. The colour follows the zones
 set for the level in the server's metadata (`meta.zones`): green when the
 level is normal, yellow in an alert or warn zone, red in an alarm or
 emergency zone. Marks beside the bar show where the zones begin, so you see
@@ -96,7 +97,7 @@ Press and hold the widget to pick another tank or bank. The panel lists every
 `tanks.*.*.currentLevel` (or every
 `electrical.batteries.*.capacity.stateOfCharge`) on the server with its
 current level, plus any other 0 to 100 % value, and offers the look (3D or
-flat) and whether to show the volume or voltage as buttons, so it is set up
+flat) and whether to show the volume or voltage and current as buttons, so it is set up
 with a few taps and no keyboard. A level older than two minutes shows as
 `--`.
 

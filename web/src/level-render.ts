@@ -4,7 +4,7 @@
 // glint on the glass) gives the light depth without leaving the 2D canvas. A
 // battery gets a terminal on top.
 
-import type { Level, LevelKind, LevelStyle } from './level-model.js'
+import type { Flow, Level, LevelKind, LevelStyle } from './level-model.js'
 
 interface Liquid {
   edge: string
@@ -63,6 +63,8 @@ export interface LevelFrame {
   valueText: string
   /** The volume left or the voltage, e.g. `168 l`; blank when not shown. */
   detailText: string
+  /** A battery's current without its sign, e.g. `4.2 A`, which the arrow gives. */
+  flow?: { text: string; direction: Flow }
   kind: LevelKind
   style: LevelStyle
   marks: { at: number; level: Level }[]
@@ -233,6 +235,43 @@ function drawFlat(ctx: CanvasRenderingContext2D, b: Box, f: LevelFrame): void {
   }
 }
 
+/** An arrow up (charging) or down (discharging) with the amps beside it. */
+function drawFlow(
+  ctx: CanvasRenderingContext2D,
+  flow: { text: string; direction: Flow },
+  cx: number,
+  base: number,
+  size: number,
+  maxWidth: number,
+  p: LevelPalette
+): void {
+  const arrow = flow.direction === 'idle' ? 0 : size * 0.7
+  const gap = arrow ? size * 0.3 : 0
+  fitText(ctx, flow.text, size, maxWidth - arrow - gap, 'bold')
+  const left = cx - (arrow + gap + ctx.measureText(flow.text).width) / 2
+  const colour =
+    flow.direction === 'charging'
+      ? p.mark.ok
+      : flow.direction === 'discharging'
+        ? p.mark.alarm
+        : p.muted
+  ctx.fillStyle = colour
+  if (arrow) {
+    const top = base - size * 0.8
+    const tip = flow.direction === 'charging' ? top : base
+    const foot = flow.direction === 'charging' ? base : top
+    ctx.beginPath()
+    ctx.moveTo(left + arrow / 2, tip)
+    ctx.lineTo(left + arrow, foot)
+    ctx.lineTo(left, foot)
+    ctx.closePath()
+    ctx.fill()
+  }
+  ctx.textAlign = 'left'
+  ctx.fillText(flow.text, left + arrow + gap, base)
+  ctx.textAlign = 'center'
+}
+
 export function drawLevel(
   ctx: CanvasRenderingContext2D,
   w: number,
@@ -259,7 +298,9 @@ export function drawLevel(
   fitText(ctx, f.title, titleSize, w - 2 * pad)
   ctx.fillText(f.title, w / 2, pad)
 
-  const footer = side ? 0 : valueSize + (f.detailText ? detailSize * 1.2 : 0) + pad
+  const lineH = detailSize * 1.2
+  const below = ((f.detailText ? 1 : 0) + (f.flow ? 1 : 0)) * lineH
+  const footer = side ? 0 : valueSize + below + pad
   const areaTop = pad + titleSize * 1.5
   const areaBottom = h - footer - pad * 0.5
   const rx = Math.min(side ? w * 0.15 : w * 0.27, (areaBottom - areaTop) * 0.4)
@@ -300,16 +341,18 @@ export function drawLevel(
   const textLeft = side ? tickX + rx * 0.32 + pad * 0.5 : pad
   const textW = w - pad - textLeft
   const textCx = textLeft + textW / 2
-  const block = valueSize + (f.detailText ? detailSize * 1.2 : 0)
+  const block = valueSize + below
   const blockBottom = side ? (areaTop + areaBottom + block) / 2 : h - pad
   ctx.textBaseline = 'alphabetic'
   ctx.fillStyle = f.fraction === undefined ? p.muted : p.text
   fitText(ctx, f.valueText, valueSize, textW, 'bold')
-  const valueBase = blockBottom - (f.detailText ? detailSize * 1.2 : 0)
-  ctx.fillText(f.valueText, textCx, valueBase)
+  let base = blockBottom - below
+  ctx.fillText(f.valueText, textCx, base)
   if (f.detailText) {
+    base += lineH
     ctx.fillStyle = p.muted
     fitText(ctx, f.detailText, detailSize, textW)
-    ctx.fillText(f.detailText, textCx, blockBottom)
+    ctx.fillText(f.detailText, textCx, base)
   }
+  if (f.flow) drawFlow(ctx, f.flow, textCx, base + lineH, detailSize, textW, p)
 }

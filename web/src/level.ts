@@ -1,7 +1,7 @@
 // A fill-level widget: one tank's level or one battery bank's state of charge
 // as a 3D cylinder or a flat bar, coloured by the zone of its `meta.zones`
 // the level is in (green, yellow, red), with the tank's volume left or the
-// bank's voltage underneath. The page's entry module picks the kind.
+// bank's voltage and current underneath. The page's entry module picks the kind.
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import { installLongPress, followNightMode } from './host.js'
@@ -9,6 +9,7 @@ import { fetchMeta, fetchValue } from './signalk.js'
 import { SourceClock } from './steer-model.js'
 import {
   KINDS,
+  flowOf,
   levelOf,
   parseLevelConfig,
   parseZones,
@@ -37,8 +38,10 @@ interface State {
   zones: Zone[]
   level: Display
   detail: Display
+  flow: Display
   levelReading?: Reading
   detailReading?: Reading
+  flowReading?: Reading
 }
 
 export function startLevel(kind: LevelKind): void {
@@ -76,6 +79,14 @@ export function startLevel(kind: LevelKind): void {
       s.config.showDetail && level !== undefined && detail !== undefined
         ? `${convert(spec.detail(level, detail), s.detail.conversion).toFixed(s.detail.decimals)} ${s.detail.symbol}`.trim()
         : ''
+    const amps = s.config.showDetail ? fresh(s.flowReading, now) : undefined
+    const flow =
+      amps === undefined
+        ? undefined
+        : {
+            text: `${convert(Math.abs(amps), s.flow.conversion).toFixed(s.flow.decimals)} ${s.flow.symbol}`.trim(),
+            direction: flowOf(amps)
+          }
     return {
       title: s.title,
       fraction: level,
@@ -85,6 +96,7 @@ export function startLevel(kind: LevelKind): void {
           ? '--'
           : `${convert(level, s.level.conversion).toFixed(s.level.decimals)} ${s.level.symbol}`.trim(),
       detailText,
+      flow,
       marks: zoneMarks(s.zones),
       kind,
       style: s.config.style,
@@ -119,17 +131,20 @@ export function startLevel(kind: LevelKind): void {
     const config = parseLevelConfig(await client.state.get())
     // Only a tank or bank of this kind has a capacity or voltage beside it;
     // another 0 to 100 % value shows its level alone.
-    const detailPath = spec.matches(config.path) ? spec.detailPath(config.path) : undefined
+    const ofKind = spec.matches(config.path)
+    const detailPath = ofKind ? spec.detailPath(config.path) : undefined
+    const flowPath = ofKind ? spec.flowPath?.(config.path) : undefined
     // A tank's capacity is sent rarely, often only at boot, so a widget opened
     // later reads it once; a reading that ages (a bank's voltage) waits for
     // the stream instead of showing an old value as current.
-    const [levelMeta, detailMeta, detailNow] = config.path
+    const [levelMeta, detailMeta, detailNow, flowMeta] = config.path
       ? await Promise.all([
           fetchMeta(config.path),
           detailPath ? fetchMeta(detailPath) : undefined,
-          detailPath && !spec.detailAges ? fetchValue(detailPath) : undefined
+          detailPath && !spec.detailAges ? fetchValue(detailPath) : undefined,
+          flowPath ? fetchMeta(flowPath) : undefined
         ])
-      : [undefined, undefined, undefined]
+      : [undefined, undefined, undefined, undefined]
     if (mine !== generation) return
     const s: State = {
       config,
@@ -142,20 +157,22 @@ export function startLevel(kind: LevelKind): void {
         { ...detailMeta, units: detailMeta?.units ?? spec.detailUnits },
         undefined,
         spec.detailDecimals
-      )
+      ),
+      flow: resolveDisplay({ ...flowMeta, units: flowMeta?.units ?? 'A' }, undefined, 1)
     }
     if (typeof detailNow === 'number' && Number.isFinite(detailNow)) {
       s.detailReading = { time: Date.now(), value: detailNow }
     }
     let next: (() => Promise<void>) | undefined
     if (config.path) {
-      const paths = detailPath ? [config.path, detailPath] : [config.path]
+      const paths = [config.path, detailPath, flowPath].filter((p) => p !== undefined)
       const clock = new SourceClock()
       next = await client.signalk.subscribe(paths, (ev) => {
         if (typeof ev.value !== 'number' || !Number.isFinite(ev.value)) return
         // A cached reading keeps its real age, so an old level still greys out.
         const reading = { time: clock.local(Date.now(), ev.timestamp), value: ev.value }
         if (ev.path === config.path) s.levelReading = reading
+        else if (ev.path === flowPath) s.flowReading = reading
         else s.detailReading = reading
         queueRender()
       })
