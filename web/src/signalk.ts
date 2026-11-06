@@ -83,13 +83,25 @@ export async function fetchHistoryProviders(): Promise<string[]> {
   }
 }
 
+/**
+ * A path's current value, whatever its type; undefined when the server has
+ * none for this client (a 4xx answer). Throws when the server cannot answer
+ * (no connection, 5xx), so a caller choosing between paths does not mistake
+ * a failed lookup for a missing one.
+ */
+export async function readValue(path: string): Promise<unknown> {
+  const res = await fetch(`/signalk/v1/api/vessels/self/${path.replace(/\./g, '/')}/value`, {
+    credentials: 'include'
+  })
+  if (res.status >= 500) throw new Error(`${path}: HTTP ${res.status}`)
+  if (!res.ok) return undefined
+  return (await res.json()) as unknown
+}
+
 /** A path's current value, whatever its type; undefined when it has none. */
 export async function fetchValue(path: string): Promise<unknown> {
   try {
-    const res = await fetch(`/signalk/v1/api/vessels/self/${path.replace(/\./g, '/')}/value`, {
-      credentials: 'include'
-    })
-    return res.ok ? ((await res.json()) as unknown) : undefined
+    return await readValue(path)
   } catch {
     return undefined
   }

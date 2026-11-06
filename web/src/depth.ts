@@ -8,12 +8,15 @@ import { DEPTH_DAY, DEPTH_NIGHT, drawDepth, type DepthFrame } from './depth-rend
 import { fetchHistory } from './history.js'
 import { followNightMode, installLongPress } from './host.js'
 import { Series } from './series.js'
-import { fetchMeta, fetchValue } from './signalk.js'
+import { fetchMeta, readValue } from './signalk.js'
 import { convert, resolveDisplay, type Display } from './units.js'
 import './styles.css'
 
 // A reading older than this shows as missing rather than as the current depth.
 const STALE_MS = 60_000
+// How long to wait before trying again after the settings or the depth
+// lookup failed; the profile already shown keeps running meanwhile.
+const RETRY_MS = 10_000
 
 interface Profile {
   path: string
@@ -78,9 +81,9 @@ function queueRender(): void {
   requestAnimationFrame(render)
 }
 
-async function seed(s: Profile, mine: number): Promise<void> {
+async function seed(s: Profile): Promise<void> {
   const rows = await fetchHistory(s.path, s.series.windowMs, s.series.bucketMs)
-  if (mine !== generation) return
+  if (profile !== s) return
   // Merged into what the stream delivered meanwhile, so no live reading and
   // none of its extremes are lost.
   for (const r of rows) s.series.merge(r.time, r.min, r.max, r.avg)
@@ -88,9 +91,12 @@ async function seed(s: Profile, mine: number): Promise<void> {
   queueRender()
 }
 
-/** The depths the server has a value for now. */
+/**
+ * The depths the server has a value for now. Rejects when a lookup fails, so
+ * a passing server error never demotes the choice to a less preferred depth.
+ */
 async function availableDepths(): Promise<Set<string>> {
-  const values = await Promise.all(DEPTH_PATHS.map((d) => fetchValue(d.path)))
+  const values = await Promise.all(DEPTH_PATHS.map((d) => readValue(d.path)))
   return new Set(DEPTH_PATHS.filter((_, i) => typeof values[i] === 'number').map((d) => d.path))
 }
 
@@ -128,8 +134,19 @@ async function apply(client: ExtensionClient): Promise<void> {
   queueRender()
   // The profile scrolls even when the depth does not change.
   timer = setInterval(queueRender, Math.max(1000, s.series.bucketMs))
-  await previous?.().catch(() => undefined)
-  await seed(s, mine)
+  const seeding = seed(s)
+  void previous?.().catch(() => undefined)
+  await seeding
+}
+
+function load(client: ExtensionClient): void {
+  apply(client).catch((err: unknown) => {
+    console.warn('depth profile: loading settings failed, retrying', err)
+    const failed = generation
+    setTimeout(() => {
+      if (generation === failed) load(client)
+    }, RETRY_MS)
+  })
 }
 
 async function main(): Promise<void> {
@@ -137,14 +154,12 @@ async function main(): Promise<void> {
   installLongPress(client)
   new ResizeObserver(queueRender).observe(canvas)
   await client.subscribe(['state.changed'], () => {
-    apply(client).catch((err: unknown) => {
-      console.warn('depth profile: settings reload failed', err)
-    })
+    load(client)
   })
   // History fills the gaps left while the page was hidden and saw no deltas.
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && profile) {
-      void seed(profile, generation)
+      void seed(profile)
     }
   })
   await followNightMode(client, (enabled) => {
@@ -153,7 +168,7 @@ async function main(): Promise<void> {
   }).catch((err: unknown) => {
     console.warn('depth profile: night mode unavailable', err)
   })
-  await apply(client)
+  load(client)
 }
 
 main().catch((err: unknown) => {
