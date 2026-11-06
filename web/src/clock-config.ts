@@ -3,9 +3,10 @@
 
 import { connectExtension } from 'signalk-plotterext-bus/extension'
 import {
+  BoatZoneReadings,
   CLOCK_PATHS,
-  boatZone,
   clockText,
+  clockTitle,
   parseClockConfig,
   type ClockConfig
 } from './clock-model.js'
@@ -73,17 +74,16 @@ async function main(): Promise<void> {
   const root = el('root')
   const client = await connectExtension()
   root.innerHTML = '<p class="status">Loading…</p>'
-  const [stored, region, offset] = await Promise.all([
-    client.state.get(),
-    fetchValue(CLOCK_PATHS.region),
-    fetchValue(CLOCK_PATHS.offset)
-  ])
-  const config = parseClockConfig(stored)
-  const boat = boatZone(region, offset)
+  const config = parseClockConfig(await client.state.get())
+  const zone = new BoatZoneReadings()
 
   const preview = (): string => {
-    const t = clockText(Date.now(), config, boat)
-    return `${esc(t.zoneName)}: ${esc(t.time)}`
+    const shown = { ...config, label: labelText() }
+    const t = clockText(Date.now(), shown, zone.zone())
+    return `${esc(clockTitle(shown, t))}: ${esc(t.time)}`
+  }
+  const updatePreview = (): void => {
+    el('preview').innerHTML = preview()
   }
 
   const draw = (): void => {
@@ -100,13 +100,15 @@ async function main(): Promise<void> {
       <label class="row"><span>Label</span>
         <input id="label" type="text" placeholder="Automatic" value="${esc(config.label)}">
       </label>
-      <p class="status" id="preview">${preview()}</p>
+      <p class="status" id="preview"></p>
       <p class="status">Boat is the zone set on the server, the same on every screen.</p>
       <p class="status" id="status"></p>
       <div class="actions">
         <button type="button" id="cancel">Cancel</button>
         <button type="button" id="save" class="primary">Save</button>
       </div>`
+    updatePreview()
+    el('label').addEventListener('input', updatePreview)
     for (const button of root.querySelectorAll<HTMLButtonElement>('.chip')) {
       button.addEventListener('click', () => {
         const choice = CHOICES.find((c) => c.key === button.dataset.key)
@@ -132,6 +134,13 @@ async function main(): Promise<void> {
     })
   }
   draw()
+  // The boat zone only feeds the preview, so the panel never waits for it.
+  for (const path of [CLOCK_PATHS.region, CLOCK_PATHS.offset]) {
+    void fetchValue(path).then((value) => {
+      zone.stored(path, value)
+      updatePreview()
+    })
+  }
 }
 
 main().catch((err: unknown) => {
