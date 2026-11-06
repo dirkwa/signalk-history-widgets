@@ -42,6 +42,7 @@ function render(): void {
   const text = clockText(Date.now() + gps.correction, config, zone.zone())
   drawClock(ctx, rect.width, rect.height, {
     title: clockTitle(config, text),
+    keep: text.fallback ? text.zoneName : undefined,
     time: text.time,
     date: config.showDate ? text.date : '',
     palette: night ? CLOCK_NIGHT : CLOCK_DAY

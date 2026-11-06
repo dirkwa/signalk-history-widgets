@@ -21,6 +21,8 @@ export const CLOCK_NIGHT: ClockPalette = {
 
 export interface ClockFrame {
   title: string
+  /** The end of `title` that must stay readable when it is shortened. */
+  keep?: string
   time: string
   /** Empty when the date is hidden. */
   date: string
@@ -34,6 +36,26 @@ export function fitSize(measure: (px: number) => number, maxWidth: number, size:
   let px = Math.floor(size)
   while (px > 7 && measure(px) > maxWidth) px--
   return px
+}
+
+/**
+ * `text` cut down with an ellipsis until `fits` accepts it. The part before
+ * `keep` (a suffix of `text`) goes first; `keep` itself is cut only once
+ * nothing else is left.
+ */
+export function shorten(text: string, keep: string, fits: (s: string) => boolean): string {
+  if (fits(text)) return text
+  const end = keep && text.endsWith(keep) ? keep : ''
+  const head = text.slice(0, text.length - end.length)
+  for (let n = head.length - 1; n > 0; n--) {
+    const s = `${head.slice(0, n).trimEnd()}…${end ? ` ${end}` : ''}`
+    if (fits(s)) return s
+  }
+  for (let n = (end || head).length - 1; n > 0; n--) {
+    const s = `${(end || head).slice(0, n).trimEnd()}…`
+    if (fits(s)) return s
+  }
+  return '…'
 }
 
 function fit(
@@ -75,8 +97,9 @@ export function drawClock(
   ctx.textBaseline = 'alphabetic'
 
   const titlePx = fit(ctx, f.title, inner, small)
+  const title = shorten(f.title, f.keep ?? '', (t) => ctx.measureText(t).width <= inner)
   ctx.fillStyle = p.muted
-  ctx.fillText(f.title, w / 2, pad + titlePx)
+  ctx.fillText(title, w / 2, pad + titlePx)
 
   const datePx = f.date ? small : 0
   const top = pad + titlePx

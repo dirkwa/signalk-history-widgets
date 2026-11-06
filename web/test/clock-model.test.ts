@@ -10,7 +10,7 @@ import {
   parseClockConfig,
   serialized
 } from '../src/clock-model.js'
-import { fitSize } from '../src/clock-render.js'
+import { fitSize, shorten } from '../src/clock-render.js'
 
 // Thursday 5 November 2026, 19:45:30 UTC.
 const NOW = Date.UTC(2026, 10, 5, 19, 45, 30)
@@ -156,6 +156,27 @@ describe('fitSize', () => {
     expect(fitSize(measure, 500, 80)).toBe(80)
     expect(fitSize(measure, 200, 80)).toBe(40)
     expect(fitSize(measure, 1, 80)).toBe(7)
+  })
+})
+
+describe('shorten', () => {
+  const fitsIn = (chars: number) => (s: string) => s.length <= chars
+  const status = 'Local time (no boat zone)'
+  const title = `Flybridge starboard helm · ${status}`
+
+  it('leaves a title that fits alone', () => {
+    expect(shorten(title, status, fitsIn(80))).toBe(title)
+  })
+
+  it('cuts a long label first and keeps the fallback status whole', () => {
+    const narrow = shorten(title, status, fitsIn(36))
+    expect(narrow).toBe(`Flybridge… ${status}`)
+    expect(narrow.length).toBeLessThanOrEqual(36)
+  })
+
+  it('cuts the status only once no label is left', () => {
+    expect(shorten(title, status, fitsIn(12))).toBe('Local time…')
+    expect(shorten('Salon', '', fitsIn(4))).toBe('Sal…')
   })
 })
 
