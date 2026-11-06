@@ -2,8 +2,8 @@
 
 Signal K plugin providing Plotter Extensions widgets (apiVersion 1): a history
 strip that draws one Signal K path over a configurable window, seeded from the
-History API, a wind steering dial, tank level and battery charge widgets
-and a clock.
+History API, a wind steering dial, tank level and battery charge widgets,
+a clock and a depth profile.
 
 ## Layout
 
@@ -31,6 +31,10 @@ and a clock.
   - `clock-model.ts`, `clock-render.ts`, `clock.ts`, `clock-config.ts` — the
     clock: settings, the boat's zone from `environment.time.*`, the GPS
     correction and the text; drawing; the widget; its touch panel.
+  - `depth-model.ts`, `depth-render.ts`, `depth.ts`, `depth-config.ts` — the
+    depth profile: settings, which depth to follow and the depth axis; the
+    echo-sounder drawing; the widget, on the strip's `Series` and History API
+    seeding; its touch panel.
 
 ## Contracts it depends on
 
@@ -43,7 +47,7 @@ and a clock.
 - **Widget state keys** (strip: `path`, `label`, `span`, `spanUnit`, `unit`,
   `decimals`; wind steering: `dial`, `north`, `trueWind`, `closeHauled`,
   `shiftSeconds`, `show*`; tank and battery: `path`, `label`, `style`, `showDetail`; clock: `zone`,
-  `hours`, `seconds`, `showDate`, `label`) are stored by the host per instance. Renaming one loses users'
+  `hours`, `seconds`, `showDate`, `label`; depth profile: `path`, `minutes`) are stored by the host per instance. Renaming one loses users'
   settings; add new keys instead.
 
 ## Gotchas

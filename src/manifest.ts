@@ -6,6 +6,16 @@ export const PLUGIN_ID = 'signalk-history-widgets'
  */
 export const ASSET_BASE = `/plotterext/${PLUGIN_ID}`
 
+const depth = (id: string, title: string, size: string) => ({
+  id,
+  title,
+  type: 'iframe',
+  url: `${ASSET_BASE}/depth.html`,
+  size,
+  configPanel: 'depth-config',
+  lifecycle: 'whileEnabled'
+})
+
 const strip = (id: string, title: string, size: string) => ({
   id,
   title,
@@ -40,7 +50,7 @@ export function buildManifest(version: string) {
   return {
     name: 'History Widgets',
     description:
-      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum, a wind steering dial with the wind shift of the last minutes, tank levels and battery charge coloured by their zones, and a clock in local, UTC or boat time.',
+      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum, a wind steering dial with the wind shift of the last minutes, tank levels and battery charge coloured by their zones, a clock in local, UTC or boat time, and the depth over time like an echo sounder.',
     version,
     apiVersion: '1',
     requires: ['widgets', 'panels.iframe', 'signalk.stream'],
@@ -69,7 +79,9 @@ export function buildManifest(version: string) {
         size: '2x1',
         configPanel: 'clock-config',
         lifecycle: 'whileEnabled'
-      }
+      },
+      depth('depth', 'Depth profile', '2x1'),
+      depth('depth-large', 'Depth profile (large)', '2x2')
     ],
     panels: [
       {
@@ -93,6 +105,13 @@ export function buildManifest(version: string) {
         title: 'Clock',
         type: 'iframe',
         url: `${ASSET_BASE}/clock-config.html`,
+        lifecycle: 'onOpen'
+      },
+      {
+        id: 'depth-config',
+        title: 'Depth profile',
+        type: 'iframe',
+        url: `${ASSET_BASE}/depth-config.html`,
         lifecycle: 'onOpen'
       }
     ]

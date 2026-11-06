@@ -80,6 +80,16 @@ describe('Series', () => {
     expect(stats).toMatchObject({ min: 4, max: 10, avg: 8 })
   })
 
+  it('keeps live extremes when history arrives after them', () => {
+    const s = new Series(30 * MIN, false, 30)
+    const now = 100 * MIN
+    s.add(now - 30_000, 12)
+    s.add(now - 20_000, 2)
+    s.merge(now - 10 * MIN, 4, 8, 6)
+    s.merge(now - 50_000, 5, 7, 6)
+    expect(s.stats(now)).toMatchObject({ min: 2, max: 12 })
+  })
+
   it('places the newest bucket at the top of the strip', () => {
     const s = new Series(30 * MIN, false, 30)
     const now = 100 * MIN
