@@ -81,11 +81,9 @@ function queueRender(): void {
 async function seed(s: Profile, mine: number): Promise<void> {
   const rows = await fetchHistory(s.path, s.series.windowMs, s.series.bucketMs)
   if (mine !== generation) return
-  if (rows.length > 0) {
-    s.series.clear()
-    for (const r of rows) s.series.merge(r.time, r.min, r.max, r.avg)
-    if (s.last) s.series.add(s.last.time, s.last.value)
-  }
+  // Merged into what the stream delivered meanwhile, so no live reading and
+  // none of its extremes are lost.
+  for (const r of rows) s.series.merge(r.time, r.min, r.max, r.avg)
   s.loading = false
   queueRender()
 }
@@ -98,12 +96,15 @@ async function availableDepths(): Promise<Set<string>> {
 
 async function apply(client: ExtensionClient): Promise<void> {
   const mine = ++generation
+  // Stopped before the await, so an older apply() resuming cannot clear the
+  // timer a newer one set.
+  clearInterval(timer)
+  timer = undefined
   if (unsubscribe) {
     const u = unsubscribe
     unsubscribe = undefined
     await u().catch(() => undefined)
   }
-  if (timer) clearInterval(timer)
   const config = parseDepthConfig(await client.state.get())
   const path = depthPath(config, config.path ? new Set() : await availableDepths())
   const meta = await fetchMeta(path)
