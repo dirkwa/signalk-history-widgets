@@ -114,15 +114,21 @@ async function apply(client: ExtensionClient): Promise<void> {
     series: new Series(config.minutes * 60_000, false),
     loading: true
   }
-  profile = s
-  queueRender()
-  unsubscribe = await client.signalk.subscribe([path], (ev) => {
+  const next = await client.signalk.subscribe([path], (ev) => {
     if (typeof ev.value !== 'number' || !Number.isFinite(ev.value)) return
     const now = Date.now()
     s.last = { time: now, value: ev.value }
     s.series.add(now, ev.value)
     queueRender()
   })
+  // A newer apply() started while this one subscribed: it owns the widget now.
+  if (mine !== generation) {
+    await next().catch(() => undefined)
+    return
+  }
+  unsubscribe = next
+  profile = s
+  queueRender()
   // The profile scrolls even when the depth does not change.
   timer = setInterval(queueRender, Math.max(1000, s.series.bucketMs))
   await seed(s, mine)

@@ -13,6 +13,10 @@ import { fetchMeta, fetchValue } from './signalk.js'
 import { convert, resolveDisplay } from './units.js'
 import './config.css'
 
+function esc(s: string): string {
+  return s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)
+}
+
 function el(id: string): HTMLElement {
   const found = document.getElementById(id)
   if (!found) throw new Error(`missing #${id}`)
@@ -57,7 +61,7 @@ async function main(): Promise<void> {
       <div class="row"><span>Depth</span><div class="chips">${depthChips
         .map(
           (c, i) =>
-            `<button type="button" class="chip${c.path === config.path ? ' on' : ''}" data-depth="${i}">${c.label}</button>`
+            `<button type="button" class="chip${c.path === config.path ? ' on' : ''}" data-depth="${i}">${esc(c.label)}</button>`
         )
         .join('')}</div></div>
       <div class="row"><span>Window</span><div class="chips">${DEPTH_WINDOWS.map(
