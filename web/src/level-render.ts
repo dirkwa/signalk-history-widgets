@@ -297,7 +297,6 @@ export function drawLevel(
     ctx.stroke()
   }
 
-  // The reading: under the bar, or centred in the room right of the ticks.
   const textLeft = side ? tickX + rx * 0.32 + pad * 0.5 : pad
   const textW = w - pad - textLeft
   const textCx = textLeft + textW / 2
