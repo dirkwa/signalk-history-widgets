@@ -88,6 +88,10 @@ how far the level is from the next one. Without zones the bar stays green.
 
 ![A battery bank as a cylinder and as a flat bar, and a tank as a flat bar](docs/screenshots/levels.png)
 
+Both come in a small size too (1x1), with the reading beside the bar:
+
+![Small battery and tank widgets](docs/screenshots/levels-small.png)
+
 Press and hold the widget to pick another tank or bank. The panel lists every
 `tanks.*.*.currentLevel` (or every
 `electrical.batteries.*.capacity.stateOfCharge`) on the server with its

@@ -246,8 +246,11 @@ export function drawLevel(
   ctx.fill()
 
   const pad = Math.max(6, Math.min(w, h) * 0.06)
-  const titleSize = Math.max(10, Math.min(w * 0.11, h * 0.06))
-  const valueSize = Math.max(14, Math.min(w * 0.2, h * 0.11))
+  // A tall cell stacks the bar over the reading; a square or wide one puts
+  // the reading beside the bar, so the bar keeps its height in a 1x1 cell.
+  const side = w >= h * 0.8
+  const titleSize = Math.max(10, Math.min(w * 0.11, h * (side ? 0.1 : 0.06)))
+  const valueSize = Math.max(14, side ? Math.min(w * 0.17, h * 0.2) : Math.min(w * 0.2, h * 0.11))
   const detailSize = Math.max(9, valueSize * 0.5)
 
   ctx.textAlign = 'center'
@@ -256,14 +259,14 @@ export function drawLevel(
   fitText(ctx, f.title, titleSize, w - 2 * pad)
   ctx.fillText(f.title, w / 2, pad)
 
-  const footer = valueSize + (f.detailText ? detailSize * 1.2 : 0) + pad
+  const footer = side ? 0 : valueSize + (f.detailText ? detailSize * 1.2 : 0) + pad
   const areaTop = pad + titleSize * 1.5
   const areaBottom = h - footer - pad * 0.5
-  const rx = Math.min(w * 0.27, (areaBottom - areaTop) * 0.4)
+  const rx = Math.min(side ? w * 0.15 : w * 0.27, (areaBottom - areaTop) * 0.4)
   // Room above the body for the 3D lid and the battery terminal.
   const headroom = rx * (f.style === '3d' ? 0.22 : 0) + (f.kind === 'battery' ? rx * 0.22 : 0)
   const box: Box = {
-    cx: w / 2 - rx * 0.15,
+    cx: side ? pad + rx : w / 2 - rx * 0.15,
     rx,
     top: areaTop + headroom,
     bottom: areaBottom - (f.style === '3d' ? rx * 0.22 : 0)
@@ -294,14 +297,19 @@ export function drawLevel(
     ctx.stroke()
   }
 
+  const textLeft = side ? tickX + rx * 0.32 + pad * 0.5 : pad
+  const textW = w - pad - textLeft
+  const textCx = textLeft + textW / 2
+  const block = valueSize + (f.detailText ? detailSize * 1.2 : 0)
+  const blockBottom = side ? (areaTop + areaBottom + block) / 2 : h - pad
   ctx.textBaseline = 'alphabetic'
   ctx.fillStyle = f.fraction === undefined ? p.muted : p.text
-  fitText(ctx, f.valueText, valueSize, w - 2 * pad, 'bold')
-  const valueBase = h - pad - (f.detailText ? detailSize * 1.2 : 0)
-  ctx.fillText(f.valueText, w / 2, valueBase)
+  fitText(ctx, f.valueText, valueSize, textW, 'bold')
+  const valueBase = blockBottom - (f.detailText ? detailSize * 1.2 : 0)
+  ctx.fillText(f.valueText, textCx, valueBase)
   if (f.detailText) {
     ctx.fillStyle = p.muted
-    fitText(ctx, f.detailText, detailSize, w - 2 * pad)
-    ctx.fillText(f.detailText, w / 2, h - pad)
+    fitText(ctx, f.detailText, detailSize, textW)
+    ctx.fillText(f.detailText, textCx, blockBottom)
   }
 }

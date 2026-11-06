@@ -16,13 +16,14 @@ const strip = (id: string, title: string, size: string) => ({
   lifecycle: 'whileEnabled'
 })
 
-const level = (id: string, title: string) => ({
+/** A level widget; the small one shares its page and panel. */
+const level = (id: string, title: string, size = '1x2', page = id) => ({
   id,
   title,
   type: 'iframe',
-  url: `${ASSET_BASE}/${id}.html`,
-  size: '1x2',
-  configPanel: `${id}-config`,
+  url: `${ASSET_BASE}/${page}.html`,
+  size,
+  configPanel: `${page}-config`,
   lifecycle: 'whileEnabled'
 })
 
@@ -57,7 +58,9 @@ export function buildManifest(version: string) {
         lifecycle: 'whileEnabled'
       },
       level('tank', 'Tank level'),
-      level('battery', 'Battery charge')
+      level('tank-small', 'Tank level (small)', '1x1', 'tank'),
+      level('battery', 'Battery charge'),
+      level('battery-small', 'Battery charge (small)', '1x1', 'battery')
     ],
     panels: [
       {
