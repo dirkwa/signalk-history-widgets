@@ -121,9 +121,9 @@ show seconds and the date, all with buttons.
 ## Depth profile
 
 The depth over the last minutes or hours like an echo sounder: time runs
-left to right with now at the right edge, depth runs down from the surface,
-and the seabed is filled in below each moment's shallowest reading. The
-current depth sits top left in the unit set in the server's Unit
+left to right with now at the right edge, depth runs down from the selected
+reference, and the seabed is filled in below each moment's shallowest reading.
+The current depth sits top left in the unit set in the server's Unit
 Preferences. Like the strip, it is seeded from the History API: with a
 history provider on the server it is full as soon as it opens, without one
 it fills from live data as the window passes.
