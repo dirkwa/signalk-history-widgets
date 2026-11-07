@@ -67,10 +67,10 @@ function isValuesResponse(body: unknown): body is ValuesResponse {
 
 /**
  * The window's history; an empty list when the server has no History API,
- * refuses the query or never recorded the path, undefined while asking again
- * may still succeed: no provider registered yet, a provider error, or the
- * server out of reach. A provider that rejects min and max is asked again for the
- * average alone. A server that has not answered within `timeoutMs` counts as
+ * refuses the query, answers with something other than history or never
+ * recorded the path; undefined while asking again may still succeed: no
+ * provider registered yet, a provider error, or the server out of reach. A
+ * provider that rejects min and max (400) is asked again for the average alone. A server that has not answered within `timeoutMs` counts as
  * out of reach.
  */
 export async function fetchHistory(
@@ -90,17 +90,19 @@ export async function fetchHistory(
       if (res.status === 404) return []
       if (res.status >= 500) return undefined
       if (!res.ok) {
-        if (withSpread) continue
+        if (withSpread && res.status === 400) continue
         return []
       }
       const body: unknown = await res.json()
       if (isValuesResponse(body)) return rowsFromResponse(body, path)
     } catch (err) {
       console.warn('history query failed', err)
-      return undefined
+      // A timeout or a network error may clear up; an answer that is not
+      // JSON will not.
+      return err instanceof SyntaxError ? [] : undefined
     }
   }
-  return undefined
+  return []
 }
 
 const FIRST_RETRY_MS = 10_000

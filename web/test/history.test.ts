@@ -83,6 +83,19 @@ describe('fetchHistory', () => {
   it('is empty when the user may not read the history', async () => {
     const fetchFn = vi.fn().mockResolvedValue(new Response('', { status: 403 }))
     expect(await fetchHistory(PATH, 60_000, 1000, REQUEST_TIMEOUT_MS, fetchFn)).toEqual([])
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+  })
+
+  it('is empty when the answer is not JSON', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const fetchFn = vi.fn().mockResolvedValue(new Response('<html>', { status: 200 }))
+    expect(await fetchHistory(PATH, 60_000, 1000, REQUEST_TIMEOUT_MS, fetchFn)).toEqual([])
+  })
+
+  it('is empty when the answer is not history', async () => {
+    const fetchFn = vi.fn(() => Promise.resolve(ok({ message: 'hello' })))
+    expect(await fetchHistory(PATH, 60_000, 1000, REQUEST_TIMEOUT_MS, fetchFn)).toEqual([])
+    expect(fetchFn).toHaveBeenCalledTimes(2)
   })
 
   it('is undefined when the provider fails', async () => {
