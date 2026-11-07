@@ -73,6 +73,17 @@ describe('fetchHistory', () => {
     expect(await fetchHistory(PATH, 60_000, 1000, fetchFn)).toBeUndefined()
   })
 
+  it('is empty when the query is refused even for the average alone', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(new Response('', { status: 400 }))
+    expect(await fetchHistory(PATH, 60_000, 1000, fetchFn)).toEqual([])
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+  })
+
+  it('is empty when the user may not read the history', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(new Response('', { status: 403 }))
+    expect(await fetchHistory(PATH, 60_000, 1000, fetchFn)).toEqual([])
+  })
+
   it('is undefined when the provider fails', async () => {
     const fetchFn = vi.fn().mockResolvedValue(new Response('', { status: 500 }))
     expect(await fetchHistory(PATH, 60_000, 1000, fetchFn)).toBeUndefined()

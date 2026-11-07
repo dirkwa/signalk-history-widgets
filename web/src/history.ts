@@ -64,10 +64,10 @@ function isValuesResponse(body: unknown): body is ValuesResponse {
 }
 
 /**
- * The window's history; an empty list when the server has no History API or
- * the provider never recorded the path, undefined while asking again may
- * still succeed: no provider registered yet, a provider error, or the server
- * out of reach. A provider that rejects min and max is asked again for the
+ * The window's history; an empty list when the server has no History API,
+ * refuses the query or never recorded the path, undefined while asking again
+ * may still succeed: no provider registered yet, a provider error, or the
+ * server out of reach. A provider that rejects min and max is asked again for the
  * average alone.
  */
 export async function fetchHistory(
@@ -82,8 +82,11 @@ export async function fetchHistory(
         credentials: 'include'
       })
       if (res.status === 404) return []
-      if (res.status === 501) return undefined
-      if (!res.ok) continue
+      if (res.status >= 500) return undefined
+      if (!res.ok) {
+        if (withSpread) continue
+        return []
+      }
       const body: unknown = await res.json()
       if (isValuesResponse(body)) return rowsFromResponse(body, path)
     } catch (err) {
