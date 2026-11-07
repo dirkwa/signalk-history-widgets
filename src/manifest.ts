@@ -50,7 +50,7 @@ export function buildManifest(version: string) {
   return {
     name: 'History Widgets',
     description:
-      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum, a wind steering dial with the wind shift of the last minutes, tank levels and battery charge coloured by their zones, a clock in local, UTC or boat time, and the depth over time like an echo sounder.',
+      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum, a wind steering dial with the wind shift of the last minutes, tank levels and battery charge coloured by their zones, a clock in local, UTC or boat time, the depth over time like an echo sounder, and the temperature, CPU load and memory of the computer Signal K runs on.',
     version,
     apiVersion: '1',
     requires: ['widgets', 'panels.iframe', 'signalk.stream'],
@@ -81,7 +81,16 @@ export function buildManifest(version: string) {
         lifecycle: 'whileEnabled'
       },
       depth('depth', 'Depth profile', '2x1'),
-      depth('depth-large', 'Depth profile (large)', '2x2')
+      depth('depth-large', 'Depth profile (large)', '2x2'),
+      {
+        id: 'system-health',
+        title: 'System health',
+        type: 'iframe',
+        url: `${ASSET_BASE}/pi.html`,
+        size: '1x1',
+        configPanel: 'system-health-config',
+        lifecycle: 'whileEnabled'
+      }
     ],
     panels: [
       {
@@ -112,6 +121,13 @@ export function buildManifest(version: string) {
         title: 'Depth profile',
         type: 'iframe',
         url: `${ASSET_BASE}/depth-config.html`,
+        lifecycle: 'onOpen'
+      },
+      {
+        id: 'system-health-config',
+        title: 'System health',
+        type: 'iframe',
+        url: `${ASSET_BASE}/pi-config.html`,
         lifecycle: 'onOpen'
       }
     ]

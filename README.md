@@ -11,8 +11,9 @@ moves.
 ![True wind direction and speed over 30 minutes](docs/screenshots/wind-strips.png)
 
 The package also brings a **Wind steering** dial, **Tank level** and
-**Battery charge** widgets, a **Clock** and a **Depth profile**, described
-[below](#wind-steering) and [further down](#depth-profile).
+**Battery charge** widgets, a **Clock**, a **Depth profile** and a
+**System health** tile, described [below](#wind-steering) and
+[further down](#depth-profile).
 
 ## Use
 
@@ -137,6 +138,20 @@ it fills from live data as the window passes.
 It follows the depth below the surface when the server has it, else below
 the transducer or the keel. Press and hold it to pick one of those yourself
 or another window, from 5 minutes to 24 hours, all with buttons.
+
+## System health
+
+A small tile (1x1) for the computer Signal K runs on: the CPU temperature in
+large type, and bars for CPU load and memory in use, with storage as an
+option. It reads what signalk-rpi-stats publishes under `environment.rpi`,
+which the Universal Installer sets up with RPI Manager. A reading turns
+yellow from 70 °C, 80 % CPU or memory and 85 % storage, and red from 80 °C
+(where a Raspberry Pi starts slowing down), 95 % CPU, 90 % memory and 95 %
+storage; zones set in the path's metadata take their place. When the Pi
+reports low voltage or throttling, that replaces the title in red. A reading
+older than two minutes shows `--`.
+
+Press and hold the tile to show or hide storage and to give it a label.
 
 ## Requirements
 
