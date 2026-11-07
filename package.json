@@ -29,7 +29,8 @@
     "displayName": "History Widgets",
     "appIcon": "./icon.svg",
     "recommends": [
-      "@signalk/freeboard-sk"
+      "@signalk/freeboard-sk",
+      "signalk-questdb"
     ],
     "screenshots": [
       "./docs/screenshots/wind-strips.png",
