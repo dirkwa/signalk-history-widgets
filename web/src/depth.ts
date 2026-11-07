@@ -5,7 +5,7 @@
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import { DEPTH_PATHS, depthPath, depthTitle, parseDepthConfig } from './depth-model.js'
 import { DEPTH_DAY, DEPTH_NIGHT, drawDepth, type DepthFrame } from './depth-render.js'
-import { fetchHistory, fetchHistoryWhenReady } from './history.js'
+import { REQUEST_TIMEOUT_MS, fetchHistory, fetchHistoryWhenReady } from './history.js'
 import { followNightMode, installLongPress } from './host.js'
 import { Series } from './series.js'
 import { fetchMeta, readValue } from './signalk.js'
@@ -84,14 +84,14 @@ function queueRender(): void {
 async function seed(s: Profile, retry: boolean): Promise<void> {
   // "Loading…" covers the first answer only; while the provider is awaited
   // the widget shows its live readings or that it has none.
-  const query = async () => {
-    const rows = await fetchHistory(s.path, s.series.windowMs, s.series.bucketMs)
+  const query = async (timeoutMs: number) => {
+    const rows = await fetchHistory(s.path, s.series.windowMs, s.series.bucketMs, timeoutMs)
     s.loading = false
     return rows
   }
   const rows = retry
     ? await fetchHistoryWhenReady(query, () => profile === s)
-    : ((await query()) ?? [])
+    : ((await query(REQUEST_TIMEOUT_MS)) ?? [])
   if (profile !== s) return
   // Merged into what the stream delivered meanwhile, so no live reading and
   // none of its extremes are lost.

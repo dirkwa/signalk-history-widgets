@@ -57,6 +57,8 @@ export function rowsFromResponse(response: ValuesResponse, path: string): Histor
   return rows
 }
 
+export const REQUEST_TIMEOUT_MS = 20_000
+
 function isValuesResponse(body: unknown): body is ValuesResponse {
   if (typeof body !== 'object' || body === null) return false
   const r = body as Partial<ValuesResponse>
@@ -68,18 +70,22 @@ function isValuesResponse(body: unknown): body is ValuesResponse {
  * refuses the query or never recorded the path, undefined while asking again
  * may still succeed: no provider registered yet, a provider error, or the
  * server out of reach. A provider that rejects min and max is asked again for the
- * average alone.
+ * average alone. A server that has not answered within `timeoutMs` counts as
+ * out of reach.
  */
 export async function fetchHistory(
   path: string,
   windowMs: number,
   bucketMs: number,
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
   fetchFn: typeof fetch = fetch
 ): Promise<HistoryRow[] | undefined> {
+  const signal = AbortSignal.timeout(timeoutMs)
   for (const withSpread of [true, false]) {
     try {
       const res = await fetchFn(historyUrl(path, windowMs, bucketMs, withSpread), {
-        credentials: 'include'
+        credentials: 'include',
+        signal
       })
       if (res.status === 404) return []
       if (res.status >= 500) return undefined
@@ -104,25 +110,26 @@ export const GIVE_UP_MS = 10 * 60_000
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 /**
- * Asks `query` until it answers, for up to GIVE_UP_MS. After a server restart
- * the widgets load before the history provider plugin has registered, and a
- * single query would leave them live-only. Gives up early, with an empty list,
- * once `wanted` turns false.
+ * Asks `query` until it answers, for up to GIVE_UP_MS including the time the
+ * queries take. After a server restart the widgets load before the history
+ * provider plugin has registered, and a single query would leave them
+ * live-only. Gives up early, with an empty list, once `wanted` turns false.
  */
 export async function fetchHistoryWhenReady(
-  query: () => Promise<HistoryRow[] | undefined>,
+  query: (timeoutMs: number) => Promise<HistoryRow[] | undefined>,
   wanted: () => boolean,
-  wait: (ms: number) => Promise<void> = sleep
+  wait: (ms: number) => Promise<void> = sleep,
+  now: () => number = Date.now
 ): Promise<HistoryRow[]> {
-  let waited = 0
+  const deadline = now() + GIVE_UP_MS
   let delay = FIRST_RETRY_MS
   for (;;) {
-    const rows = await query()
+    const rows = await query(Math.max(1, Math.min(REQUEST_TIMEOUT_MS, deadline - now())))
     if (rows) return rows
-    if (waited >= GIVE_UP_MS || !wanted()) return []
-    await wait(delay)
-    if (!wanted()) return []
-    waited += delay
+    const left = deadline - now()
+    if (left <= 0 || !wanted()) return []
+    await wait(Math.min(delay, left))
+    if (!wanted() || deadline - now() <= 0) return []
     delay = Math.min(MAX_RETRY_MS, delay * 2)
   }
 }

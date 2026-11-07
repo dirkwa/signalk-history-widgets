@@ -4,7 +4,7 @@
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import { isSignedAngle, labelFor, parseConfig, windowMs, type StripConfig } from './config-model.js'
-import { fetchHistory, fetchHistoryWhenReady } from './history.js'
+import { REQUEST_TIMEOUT_MS, fetchHistory, fetchHistoryWhenReady } from './history.js'
 import { followNightMode, installLongPress } from './host.js'
 import { DAY, NIGHT, draw, type Frame } from './render.js'
 import { Series, wrapAngle } from './series.js'
@@ -110,14 +110,14 @@ function queueRender(): void {
 async function seed(s: Strip, mine: number, retry: boolean): Promise<void> {
   // "Loading…" covers the first answer only; while the provider is awaited
   // the widget shows its live readings or that it has none.
-  const query = async () => {
-    const rows = await fetchHistory(s.config.path, s.series.windowMs, s.series.bucketMs)
+  const query = async (timeoutMs: number) => {
+    const rows = await fetchHistory(s.config.path, s.series.windowMs, s.series.bucketMs, timeoutMs)
     s.loading = false
     return rows
   }
   const rows = retry
     ? await fetchHistoryWhenReady(query, () => mine === generation)
-    : ((await query()) ?? [])
+    : ((await query(REQUEST_TIMEOUT_MS)) ?? [])
   if (mine !== generation) return
   // Merged into what the stream delivered meanwhile, so no live reading and
   // none of its extremes are lost.
