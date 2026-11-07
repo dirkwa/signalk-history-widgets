@@ -3,7 +3,7 @@
 Signal K plugin providing Plotter Extensions widgets (apiVersion 1): a history
 strip that draws one Signal K path over a configurable window, seeded from the
 History API, a wind steering dial, tank level and battery charge widgets,
-a clock and a depth profile.
+a clock, a depth profile and a system health tile.
 
 ## Layout
 
@@ -35,6 +35,9 @@ a clock and a depth profile.
     depth profile: settings, which depth to follow and the depth axis; the
     echo-sounder drawing; the widget, on the strip's `Series` and History API
     seeding; its touch panel.
+  - `pi-model.ts`, `pi-render.ts`, `pi.ts`, `pi-config.ts` — the system
+    health tile: signalk-rpi-stats paths, default zones and settings; the
+    temperature and bars drawing; the widget; its touch panel.
 
 ## Contracts it depends on
 
@@ -44,10 +47,14 @@ a clock and a depth profile.
 - **History API** `/signalk/v2/api/history/values` with `min`, `max` and
   `average`; a 501 means no provider. A provider that rejects min/max is asked
   for the average alone.
+- **signalk-rpi-stats paths** under its default prefix `environment.rpi`
+  (`cpu.temperature`, `cpu.utilisation`, `memory.utilisation`,
+  `storage.utilisation`, `throttling.underVoltage`, `throttling.throttled`),
+  listed in `web/src/pi-model.ts`.
 - **Widget state keys** (strip: `path`, `label`, `span`, `spanUnit`, `unit`,
   `decimals`; wind steering: `dial`, `north`, `trueWind`, `closeHauled`,
   `shiftSeconds`, `show*`; tank and battery: `path`, `label`, `style`, `showDetail`; clock: `zone`,
-  `hours`, `seconds`, `showDate`, `label`; depth profile: `path`, `minutes`) are stored by the host per instance. Renaming one loses users'
+  `hours`, `seconds`, `showDate`, `label`; depth profile: `path`, `minutes`; system health: `label`, `showStorage`) are stored by the host per instance. Renaming one loses users'
   settings; add new keys instead.
 
 ## Gotchas

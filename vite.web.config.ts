@@ -26,7 +26,9 @@ export default defineConfig({
         clock: `${here}web/clock.html`,
         'clock-config': `${here}web/clock-config.html`,
         depth: `${here}web/depth.html`,
-        'depth-config': `${here}web/depth-config.html`
+        'depth-config': `${here}web/depth-config.html`,
+        pi: `${here}web/pi.html`,
+        'pi-config': `${here}web/pi-config.html`
       }
     }
   },
