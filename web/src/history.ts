@@ -64,29 +64,62 @@ function isValuesResponse(body: unknown): body is ValuesResponse {
 }
 
 /**
- * The window's history, or an empty list when the server has no history
- * provider or it never recorded the path. A provider that rejects min and
- * max is asked again for the average alone.
+ * The window's history; an empty list when the server has no History API or
+ * the provider never recorded the path, undefined while asking again may
+ * still succeed: no provider registered yet, a provider error, or the server
+ * out of reach. A provider that rejects min and max is asked again for the
+ * average alone.
  */
 export async function fetchHistory(
   path: string,
   windowMs: number,
   bucketMs: number,
   fetchFn: typeof fetch = fetch
-): Promise<HistoryRow[]> {
+): Promise<HistoryRow[] | undefined> {
   for (const withSpread of [true, false]) {
     try {
       const res = await fetchFn(historyUrl(path, windowMs, bucketMs, withSpread), {
         credentials: 'include'
       })
-      if (res.status === 404 || res.status === 501) return []
+      if (res.status === 404) return []
+      if (res.status === 501) return undefined
       if (!res.ok) continue
       const body: unknown = await res.json()
       if (isValuesResponse(body)) return rowsFromResponse(body, path)
     } catch (err) {
       console.warn('history query failed', err)
-      return []
+      return undefined
     }
   }
-  return []
+  return undefined
+}
+
+const FIRST_RETRY_MS = 10_000
+const MAX_RETRY_MS = 60_000
+export const GIVE_UP_MS = 10 * 60_000
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
+/**
+ * Asks `query` until it answers, for up to GIVE_UP_MS. After a server restart
+ * the widgets load before the history provider plugin has registered, and a
+ * single query would leave them live-only. Gives up early, with an empty list,
+ * once `wanted` turns false.
+ */
+export async function fetchHistoryWhenReady(
+  query: () => Promise<HistoryRow[] | undefined>,
+  wanted: () => boolean,
+  wait: (ms: number) => Promise<void> = sleep
+): Promise<HistoryRow[]> {
+  let waited = 0
+  let delay = FIRST_RETRY_MS
+  for (;;) {
+    const rows = await query()
+    if (rows) return rows
+    if (waited >= GIVE_UP_MS || !wanted()) return []
+    await wait(delay)
+    if (!wanted()) return []
+    waited += delay
+    delay = Math.min(MAX_RETRY_MS, delay * 2)
+  }
 }
