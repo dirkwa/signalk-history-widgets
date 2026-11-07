@@ -5,7 +5,7 @@
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import { DEPTH_PATHS, depthPath, depthTitle, parseDepthConfig } from './depth-model.js'
 import { DEPTH_DAY, DEPTH_NIGHT, drawDepth, type DepthFrame } from './depth-render.js'
-import { fetchHistory } from './history.js'
+import { REQUEST_TIMEOUT_MS, fetchHistory, fetchHistoryWhenReady } from './history.js'
 import { followNightMode, installLongPress } from './host.js'
 import { Series } from './series.js'
 import { fetchMeta, readValue } from './signalk.js'
@@ -81,13 +81,21 @@ function queueRender(): void {
   requestAnimationFrame(render)
 }
 
-async function seed(s: Profile): Promise<void> {
-  const rows = await fetchHistory(s.path, s.series.windowMs, s.series.bucketMs)
+async function seed(s: Profile, retry: boolean): Promise<void> {
+  // "Loading…" covers the first answer only; while the provider is awaited
+  // the widget shows its live readings or that it has none.
+  const query = async (timeoutMs: number) => {
+    const rows = await fetchHistory(s.path, s.series.windowMs, s.series.bucketMs, timeoutMs)
+    s.loading = false
+    return rows
+  }
+  const rows = retry
+    ? await fetchHistoryWhenReady(query, () => profile === s)
+    : ((await query(REQUEST_TIMEOUT_MS)) ?? [])
   if (profile !== s) return
   // Merged into what the stream delivered meanwhile, so no live reading and
   // none of its extremes are lost.
   for (const r of rows) s.series.merge(r.time, r.min, r.max, r.avg)
-  s.loading = false
   queueRender()
 }
 
@@ -134,7 +142,7 @@ async function apply(client: ExtensionClient): Promise<void> {
   queueRender()
   // The profile scrolls even when the depth does not change.
   timer = setInterval(queueRender, Math.max(1000, s.series.bucketMs))
-  const seeding = seed(s)
+  const seeding = seed(s, true)
   void previous?.().catch(() => undefined)
   await seeding
 }
@@ -159,7 +167,7 @@ async function main(): Promise<void> {
   // History fills the gaps left while the page was hidden and saw no deltas.
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && profile) {
-      void seed(profile)
+      void seed(profile, false)
     }
   })
   await followNightMode(client, (enabled) => {
