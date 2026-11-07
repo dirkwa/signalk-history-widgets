@@ -10,24 +10,31 @@ moves.
 
 ![True wind direction and speed over 30 minutes](docs/screenshots/wind-strips.png)
 
-The package also brings a **Wind steering** dial, **Tank level** and
-**Battery charge** widgets, a **Clock**, a **Depth profile** and a
-**System health** tile, described [below](#wind-steering) and
-[further down](#depth-profile).
+The package brings these widgets, each in the size it is placed at (columns x
+rows of the widget area):
+
+| Widget                                                       | Size           | Shows                                                             |
+| ------------------------------------------------------------ | -------------- | ----------------------------------------------------------------- |
+| [History strip](#use)                                        | 1x2, wide 2x2  | one value over 5 minutes to 24 hours                              |
+| [Wind steering](#wind-steering)                              | 2x2            | apparent and true wind, close-hauled lines, wind shift            |
+| [Tank level, Battery charge](#tank-level-and-battery-charge) | 1x2, small 1x1 | a tank's level or a bank's state of charge, coloured by its zones |
+| [Clock](#clock)                                              | 2x1            | local, UTC or boat time, corrected to GPS                         |
+| [Depth profile](#depth-profile)                              | 2x1, large 2x2 | the depth over time like an echo sounder                          |
+| [System health](#system-health)                              | 1x1            | CPU temperature, load and memory of the computer Signal K runs on |
 
 ## Use
 
 1. Install **History Widgets** from the App Store and restart the server. The
    plugin is enabled on install.
 2. In Freeboard-SK, press and hold an empty spot in a widget area (a corner or
-   the bottom centre) and pick **History strip** (tall) or **History strip
-   (wide)**.
-3. Pick the value: a quick button (TWD, TWS, TWA, AWA, AWS, SOG, STW, COG,
-   HDG, depth, air pressure, air and water temperature) or any numeric Signal K
-   path. Tap the time span, from 5 minutes to 24 hours.
+   the bottom centre) and pick a widget, for example **History strip** (tall)
+   or **History strip (wide)**.
+3. For a strip, pick the value: a quick button (TWD, TWS, TWA, AWA, AWS, SOG,
+   STW, COG, HDG, depth, air pressure, air and water temperature) or any
+   numeric Signal K path. Tap the time span, from 5 minutes to 24 hours.
 
 For several values, place several strips next to each other. Press and hold a
-placed strip to change it or remove it.
+placed widget to change it or remove it.
 
 ![Configuration](docs/screenshots/config.png)
 
@@ -39,6 +46,12 @@ or signalk-to-influxdb2) a new strip shows as much of the window as the
 provider has recorded for that path; a provider that was installed recently
 fills only the time since then. Without one the strip starts empty and fills
 from live data. The configuration panel says which case applies.
+
+After a server restart the history provider can take a while to come up. A
+strip or depth profile that loads meanwhile shows live data and keeps asking
+for its history for up to ten minutes; once the provider answers, the earlier
+part of the window fills in without losing what was collected in between. A
+screen that was asleep fills the gap from history when it wakes up.
 
 Directions such as true wind direction or heading read 0 to 360 and stay one
 band when they swing across north. Other angles, such as the apparent wind
@@ -150,6 +163,8 @@ yellow from 70 °C, 80 % CPU or memory and 85 % storage, and red from 80 °C
 storage; zones set in the path's metadata take their place. When the Pi
 reports low voltage or throttling, that replaces the title in red. A reading
 older than two minutes shows `--`.
+
+![System health tiles: warn zones with storage, low voltage, no data, and night mode](docs/screenshots/system-health.png)
 
 Press and hold the tile to show or hide storage and to give it a label.
 
