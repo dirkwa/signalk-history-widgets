@@ -4,7 +4,7 @@
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import { isSignedAngle, labelFor, parseConfig, windowMs, type StripConfig } from './config-model.js'
-import { fetchHistory } from './history.js'
+import { REQUEST_TIMEOUT_MS, fetchHistory, fetchHistoryWhenReady } from './history.js'
 import { followNightMode, installLongPress } from './host.js'
 import { DAY, NIGHT, draw, type Frame } from './render.js'
 import { Series, wrapAngle } from './series.js'
@@ -107,15 +107,21 @@ function queueRender(): void {
   requestAnimationFrame(render)
 }
 
-async function seed(s: Strip, mine: number): Promise<void> {
-  const rows = await fetchHistory(s.config.path, s.series.windowMs, s.series.bucketMs)
-  if (mine !== generation) return
-  if (rows.length > 0) {
-    s.series.clear()
-    for (const r of rows) s.series.merge(r.time, r.min, r.max, r.avg)
-    if (s.last) s.series.add(s.last.time, s.last.value)
+async function seed(s: Strip, mine: number, retry: boolean): Promise<void> {
+  // "Loading…" covers the first answer only; while the provider is awaited
+  // the widget shows its live readings or that it has none.
+  const query = async (timeoutMs: number) => {
+    const rows = await fetchHistory(s.config.path, s.series.windowMs, s.series.bucketMs, timeoutMs)
+    s.loading = false
+    return rows
   }
-  s.loading = false
+  const rows = retry
+    ? await fetchHistoryWhenReady(query, () => mine === generation)
+    : ((await query(REQUEST_TIMEOUT_MS)) ?? [])
+  if (mine !== generation) return
+  // Merged into what the stream delivered meanwhile, so no live reading and
+  // none of its extremes are lost.
+  for (const r of rows) s.series.merge(r.time, r.min, r.max, r.avg)
   queueRender()
 }
 
@@ -150,7 +156,7 @@ async function apply(client: ExtensionClient): Promise<void> {
   })
   // The strip scrolls even when the value does not change.
   timer = setInterval(queueRender, Math.max(1000, s.series.bucketMs))
-  await seed(s, mine)
+  await seed(s, mine, true)
 }
 
 async function main(): Promise<void> {
@@ -165,7 +171,7 @@ async function main(): Promise<void> {
   // History fills the gaps left while the page was hidden and saw no deltas.
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && strip) {
-      void seed(strip, generation)
+      void seed(strip, generation, false)
     }
   })
   await followNightMode(client, (enabled) => {
