@@ -123,6 +123,8 @@ async function main(client: ExtensionClient): Promise<void> {
   new ResizeObserver(queueRender).observe(canvas)
   // Keeps the average moving, and greys out a plugin that stopped.
   setInterval(queueRender, REDRAW_MS)
+  // One pending retry at most, however often reloads fail meanwhile.
+  let retry: ReturnType<typeof setTimeout> | undefined
   const loadSettings = settingsLoader(
     async () => {
       config = parsePolarConfig(await client.state.get())
@@ -132,7 +134,8 @@ async function main(client: ExtensionClient): Promise<void> {
     () => follow(client),
     (err, reload) => {
       console.warn('polar: settings or subscription unavailable', err)
-      setTimeout(() => void reload(), RETRY_MS)
+      clearTimeout(retry)
+      retry = setTimeout(() => void reload(), RETRY_MS)
     }
   )
   await client.subscribe(['state.changed'], () => {
