@@ -21,6 +21,7 @@ rows of the widget area):
 | [Clock](#clock)                                              | 2x1            | local, UTC or boat time, corrected to GPS                         |
 | [Depth profile](#depth-profile)                              | 2x1, large 2x2 | the depth over time like an echo sounder                          |
 | [System health](#system-health)                              | 1x1            | CPU temperature, load and memory of the computer Signal K runs on |
+| [Polar performance](#polar-performance)                      | 1x1            | how close the boat sails to its polar, in percent                 |
 
 ## Use
 
@@ -167,6 +168,24 @@ older than two minutes shows `--`.
 ![System health tiles: warn zones with storage, low voltage, no data, and night mode](docs/screenshots/system-health.png)
 
 Press and hold the tile to show or hide storage and to give it a label.
+
+## Polar performance
+
+A small tile (1x1) that shows how close the boat sails to its polar: the
+boat speed as a percentage of the polar speed, averaged over 10 seconds, in
+a gauge from 0 to 120 % with a mark at 100 %. Underneath it shows the boat
+speed against the polar speed. The value comes from
+[Polar Performance](https://github.com/htool/signalk-polar-performance-plugin)
+(`performance.polarSpeedRatio`), which compares the boat with the polar
+chosen in [Polar Management](https://github.com/Asw1n/signalk-polar-management);
+install both. The tile turns yellow below 80 %; zones set in the path's
+metadata take its place. When the polar has no target, in irons, in near
+calm or without a polar, the tile shows `--` and "No target".
+
+![Polar performance tiles: on the polar, below 80 %, VMG, no target, and night mode](docs/screenshots/polar-performance.png)
+
+Press and hold the tile to compare VMG instead of boat speed, to average over
+5, 10 or 30 seconds, to hide the speeds and to give it a label.
 
 ## Requirements
 

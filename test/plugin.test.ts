@@ -26,7 +26,7 @@ function fakeApp() {
 }
 
 describe('manifest', () => {
-  it('offers a tall and a wide strip, the wind steering dial, a tank and a battery in two sizes, the clock, the depth profile and system health', () => {
+  it('offers a tall and a wide strip, the wind steering dial, a tank and a battery in two sizes, the clock, the depth profile, system health and polar performance', () => {
     const m = buildManifest('1.0.0')
     expect(m.apiVersion).toBe('1')
     expect(m.widgets.map((w) => [w.id, w.size, w.configPanel])).toEqual([
@@ -40,7 +40,8 @@ describe('manifest', () => {
       ['clock', '2x1', 'clock-config'],
       ['depth', '2x1', 'depth-config'],
       ['depth-large', '2x2', 'depth-config'],
-      ['system-health', '1x1', 'system-health-config']
+      ['system-health', '1x1', 'system-health-config'],
+      ['polar-performance', '1x1', 'polar-performance-config']
     ])
     for (const w of m.widgets) {
       expect(w.url.startsWith(`${ASSET_BASE}/`)).toBe(true)
