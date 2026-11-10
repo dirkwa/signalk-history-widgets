@@ -22,4 +22,16 @@ describe('valueAxis', () => {
     const axis = valueAxis({ centre: 0, min: 5, max: 5, avg: 5, bands: [] }, 2)
     expect(axis.hi - axis.lo).toBeCloseTo(2.2)
   })
+
+  it('keeps the reference in view', () => {
+    const axis = valueAxis({ centre: 0, min: 0.7, max: 0.9, avg: 0.8, bands: [] }, 0.02, 1)
+    expect(axis.lo).toBeLessThan(0.7)
+    expect(axis.hi).toBeGreaterThan(1)
+  })
+
+  it('leaves the range alone when the reference is inside it', () => {
+    const axis = valueAxis({ centre: 0, min: 0.9, max: 1.1, avg: 1, bands: [] }, 0.02, 1)
+    expect(axis.lo).toBeCloseTo(0.89)
+    expect(axis.hi).toBeCloseTo(1.11)
+  })
 })

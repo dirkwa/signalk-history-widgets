@@ -31,8 +31,8 @@ rows of the widget area):
    the bottom centre) and pick a widget, for example **History strip** (tall)
    or **History strip (wide)**.
 3. For a strip, pick the value: a quick button (TWD, TWS, TWA, AWA, AWS, SOG,
-   STW, COG, HDG, depth, air pressure, air and water temperature) or any
-   numeric Signal K path. Tap the time span, from 5 minutes to 24 hours.
+   STW, COG, HDG, depth, air pressure, air and water temperature, polar and
+   VMG percentage) or any numeric Signal K path. Tap the time span, from 5 minutes to 24 hours.
 
 For several values, place several strips next to each other. Press and hold a
 placed widget to change it or remove it.
@@ -188,6 +188,11 @@ calm or without a polar, the tile shows `--` and "No target".
 
 Press and hold the tile to compare VMG instead of boat speed, to average over
 5, 10 or 30 seconds, to hide the speeds and to give it a label.
+
+To see how the boat sailed against the polar over time, pick **Polar %** or
+**VMG %** on a history strip. A dashed line marks 100 % and always stays in
+view, so the strip shows at a glance whether the boat sailed above or below
+its polar. Times without a target leave a gap.
 
 ## Requirements
 

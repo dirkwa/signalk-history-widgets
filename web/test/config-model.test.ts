@@ -3,6 +3,7 @@ import {
   DEFAULT_CONFIG,
   isSignedAngle,
   labelFor,
+  referenceFor,
   parseConfig,
   spanChoices,
   windowMs,
@@ -90,5 +91,16 @@ describe('spanChoices', () => {
       '24 h'
     ])
     expect(labels({ ...DEFAULT_CONFIG, span: 48, spanUnit: 'h' }).at(-1)).toBe('48 h')
+  })
+})
+
+describe('referenceFor', () => {
+  it('marks 100 % on the polar ratios', () => {
+    expect(referenceFor('performance.polarSpeedRatio')).toBe(1)
+    expect(referenceFor('performance.polarVelocityMadeGoodRatio')).toBe(1)
+  })
+
+  it('marks nothing on other ratios', () => {
+    expect(referenceFor('electrical.batteries.house.capacity.stateOfCharge')).toBeUndefined()
   })
 })

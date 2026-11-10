@@ -1,7 +1,8 @@
 // Draws the strip: a header with the live value, the window's minimum,
 // average and maximum, and below it one bar per time bucket, newest at the
 // top. The value axis spans the window's own minimum to maximum, so the
-// trace always fills the strip however little the value moves.
+// trace always fills the strip however little the value moves. A reference
+// value, such as 100 % of the polar, widens the axis to stay in view.
 
 import type { WindowStats } from './series.js'
 
@@ -12,6 +13,7 @@ export interface Palette {
   bar: string
   avg: string
   grid: string
+  reference: string
 }
 
 export const DAY: Palette = {
@@ -20,7 +22,8 @@ export const DAY: Palette = {
   muted: '#9fb3c4',
   bar: '#29b6f6',
   avg: '#ef5350',
-  grid: 'rgba(255, 255, 255, 0.22)'
+  grid: 'rgba(255, 255, 255, 0.22)',
+  reference: 'rgba(232, 237, 242, 0.85)'
 }
 
 export const NIGHT: Palette = {
@@ -29,7 +32,8 @@ export const NIGHT: Palette = {
   muted: '#8e2424',
   bar: '#7f1212',
   avg: '#ff5252',
-  grid: 'rgba(211, 47, 47, 0.3)'
+  grid: 'rgba(211, 47, 47, 0.3)',
+  reference: '#d32f2f'
 }
 
 export interface Tick {
@@ -57,10 +61,14 @@ export function timeTicks(windowMs: number): Tick[] {
   return ticks
 }
 
-/** The value axis: the window's range with a margin, never empty. */
-export function valueAxis(stats: WindowStats, minSpan: number): { lo: number; hi: number } {
-  let lo = stats.min
-  let hi = stats.max
+/** The value axis: the window's range and the reference with a margin, never empty. */
+export function valueAxis(
+  stats: WindowStats,
+  minSpan: number,
+  reference?: number
+): { lo: number; hi: number } {
+  let lo = Math.min(stats.min, reference ?? stats.min)
+  let hi = Math.max(stats.max, reference ?? stats.max)
   if (hi - lo < minSpan) {
     const mid = (hi + lo) / 2
     lo = mid - minSpan / 2
@@ -81,6 +89,8 @@ export interface Frame {
   stats: WindowStats | undefined
   /** Smallest value range the axis shows, in plot units. */
   minSpan: number
+  /** Value marked with a dashed line, in plot units. */
+  reference?: number
   message?: string
   palette: Palette
 }
@@ -182,7 +192,7 @@ export function draw(ctx: CanvasRenderingContext2D, width: number, height: numbe
     return
   }
 
-  const axis = valueAxis(f.stats, f.minSpan)
+  const axis = valueAxis(f.stats, f.minSpan, f.reference)
   const xOf = (v: number) => left + ((v - axis.lo) / (axis.hi - axis.lo)) * stripW
   ctx.fillStyle = p.bar
   for (const b of f.stats.bands) {
@@ -194,6 +204,17 @@ export function draw(ctx: CanvasRenderingContext2D, width: number, height: numbe
     const yTop = Math.max(top, y0)
     // Half a pixel of overlap, so neighbouring buckets leave no hairline gap.
     ctx.fillRect(x0, yTop, x1 - x0, Math.max(1, y1 - yTop) + 0.5)
+  }
+
+  if (f.reference !== undefined) {
+    const rx = Math.round(xOf(f.reference)) + 0.5
+    ctx.strokeStyle = p.reference
+    ctx.setLineDash([4, 3])
+    ctx.beginPath()
+    ctx.moveTo(rx, top)
+    ctx.lineTo(rx, bottom)
+    ctx.stroke()
+    ctx.setLineDash([])
   }
 
   const ax = Math.round(xOf(f.stats.avg)) + 0.5
