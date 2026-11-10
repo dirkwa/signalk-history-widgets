@@ -123,7 +123,7 @@ async function main(client: ExtensionClient): Promise<void> {
   new ResizeObserver(queueRender).observe(canvas)
   // Keeps the average moving, and greys out a plugin that stopped.
   setInterval(queueRender, REDRAW_MS)
-  const loadSettings = async () => {
+  const applySettings = async () => {
     try {
       const next = parsePolarConfig(await client.state.get())
       config = next
@@ -142,6 +142,10 @@ async function main(client: ExtensionClient): Promise<void> {
       console.warn('polar: settings unavailable', err)
     }
   }
+  // One reload at a time, in order: the newest settings decide the source,
+  // and a failed subscription cannot undo a later one.
+  let reloads = Promise.resolve()
+  const loadSettings = (): Promise<void> => (reloads = reloads.then(applySettings))
   await client.subscribe(['state.changed'], () => {
     void loadSettings()
   })
