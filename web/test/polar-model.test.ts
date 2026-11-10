@@ -65,16 +65,17 @@ describe('RatioAverage', () => {
     a.add(0, 0.2)
     a.add(1000, null)
     expect(a.mean(1500, 10_000, 30_000)).toBeUndefined()
-    expect(a.noTarget(1500, 30_000)).toBe(true)
+    expect(a.noTarget).toBe(true)
     a.add(2000, 0.9)
-    expect(a.noTarget(2000, 30_000)).toBe(false)
+    expect(a.noTarget).toBe(false)
     expect(a.mean(2500, 10_000, 30_000)).toBe(0.9)
   })
 
-  it('stops saying there is no target once that is stale too', () => {
+  it('keeps saying there is no target until a value arrives', () => {
     const a = new RatioAverage()
     a.add(0, null)
-    expect(a.noTarget(31_000, 30_000)).toBe(false)
+    expect(a.mean(60_000, 10_000, 30_000)).toBeUndefined()
+    expect(a.noTarget).toBe(true)
   })
 })
 

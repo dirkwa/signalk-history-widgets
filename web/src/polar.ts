@@ -23,6 +23,7 @@ import './styles.css'
 // The plugin reports on every wind update; a silent one greys out.
 const STALE_MS = 30_000
 const REDRAW_MS = 1000
+const RETRY_MS = 5000
 
 const canvas = document.createElement('canvas')
 document.getElementById('root')?.append(canvas)
@@ -38,7 +39,7 @@ let generation = 0
 let following: PolarConfig['source'] | undefined
 
 function detailText(ratio: number | undefined, now: number): string {
-  if (average.noTarget(now, STALE_MS)) return 'No target'
+  if (average.noTarget) return 'No target'
   if (!config.showDetail || ratio === undefined) return ''
   if (!target || now - target.time >= STALE_MS) return ''
   const show = (v: number) => convert(v, speedDisplay.conversion).toFixed(speedDisplay.decimals)
@@ -79,12 +80,13 @@ function queueRender(): void {
   requestAnimationFrame(render)
 }
 
-async function loadMeta(): Promise<void> {
+async function loadMeta(mine: number): Promise<void> {
   const spec = SOURCES[config.source]
   const [ratioMeta, targetMeta] = await Promise.all([
     fetchMeta(spec.ratioPath),
     fetchMeta(spec.targetPath)
   ])
+  if (mine !== generation) return
   zones = zonesFor(ratioMeta?.zones)
   speedDisplay = resolveDisplay({ ...targetMeta, units: 'm/s' }, undefined, 1)
   queueRender()
@@ -112,7 +114,7 @@ async function follow(client: ExtensionClient): Promise<void> {
   const previous = unsubscribe
   unsubscribe = next
   queueRender()
-  void loadMeta()
+  void loadMeta(mine)
   void previous?.().catch(() => undefined)
 }
 
@@ -128,7 +130,10 @@ async function main(client: ExtensionClient): Promise<void> {
       if (next.source !== following) {
         following = next.source
         await follow(client).catch((err: unknown) => {
+          // follow() has already let go of the previous source, so the tile
+          // stays dead unless it tries again.
           following = undefined
+          setTimeout(() => void loadSettings(), RETRY_MS)
           throw err
         })
       }

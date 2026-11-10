@@ -90,21 +90,24 @@ export function ratioLevel(ratio: number, zones: readonly Zone[]): Level {
  */
 export class RatioAverage {
   private samples: { time: number; value: number }[] = []
-  private clearedAt: number | undefined
+  private cleared = false
 
   add(time: number, value: number | null): void {
     if (value === null) {
       this.samples = []
-      this.clearedAt = time
+      this.cleared = true
       return
     }
-    this.clearedAt = undefined
+    this.cleared = false
     this.samples.push({ time, value })
   }
 
-  /** The plugin's last word was that the polar has no target now. */
-  noTarget(now: number, staleMs: number): boolean {
-    return this.clearedAt !== undefined && now - this.clearedAt < staleMs
+  /**
+   * The plugin's last word was that the polar has no target. It may say so
+   * only once, so this holds until a value arrives.
+   */
+  get noTarget(): boolean {
+    return this.cleared
   }
 
   /**
