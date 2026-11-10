@@ -138,9 +138,18 @@ async function main(client: ExtensionClient): Promise<void> {
       retry = setTimeout(() => void reload(), RETRY_MS)
     }
   )
-  await client.subscribe(['state.changed'], () => {
-    void loadSettings()
-  })
+  const watchSettings = async (): Promise<void> => {
+    try {
+      await client.subscribe(['state.changed'], () => {
+        void loadSettings()
+      })
+    } catch (err: unknown) {
+      console.warn('polar: settings changes unavailable', err)
+      // A reload once it is back picks up changes made meanwhile.
+      setTimeout(() => void watchSettings().then(loadSettings), RETRY_MS)
+    }
+  }
+  await watchSettings()
   await followNightMode(client, (enabled) => {
     night = enabled
     queueRender()
