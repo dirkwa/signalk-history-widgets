@@ -107,26 +107,29 @@ describe('settingsLoader', () => {
     expect(followed).toEqual(['speed', 'vmg'])
   })
 
-  it('retries the newest source after a failed follow', async () => {
+  it('lets a reload queued during a failing follow win', async () => {
     let current = settings('speed')
     const followed: string[] = []
-    let failFirst = true
+    let rejectFirst: (err: Error) => void = () => undefined
     const retries: (() => Promise<void>)[] = []
     const load = settingsLoader(
       () => Promise.resolve(current),
       (c) => {
         followed.push(c.source)
-        if (failFirst) {
-          failFirst = false
-          // The user picks VMG while the first subscription is pending.
-          current = settings('vmg')
-          return Promise.reject(new Error('subscribe failed'))
+        if (followed.length === 1) {
+          return new Promise<void>((_resolve, reject) => (rejectFirst = reject))
         }
         return Promise.resolve()
       },
       (_err, reload) => retries.push(reload)
     )
-    await load()
+    const first = load()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    current = settings('vmg')
+    const queued = load()
+    rejectFirst(new Error('subscribe failed'))
+    await Promise.all([first, queued])
+    expect(followed).toEqual(['speed', 'vmg'])
     expect(retries).toHaveLength(1)
     await retries[0]?.()
     expect(followed).toEqual(['speed', 'vmg'])
