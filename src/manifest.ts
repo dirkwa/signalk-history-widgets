@@ -50,7 +50,7 @@ export function buildManifest(version: string) {
   return {
     name: 'History Widgets',
     description:
-      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum, a wind steering dial with the wind shift of the last minutes, tank levels and battery charge coloured by their zones, a clock in local, UTC or boat time, the depth over time like an echo sounder, and the temperature, CPU load and memory of the computer Signal K runs on.',
+      'Any value over the last minutes or hours as a vertical strip with its minimum, average and maximum, a wind steering dial with the wind shift of the last minutes, tank levels and battery charge coloured by their zones, a clock in local, UTC or boat time, the depth over time like an echo sounder, the temperature, CPU load and memory of the computer Signal K runs on, and how close the boat sails to its polar.',
     version,
     apiVersion: '1',
     requires: ['widgets', 'panels.iframe', 'signalk.stream'],
@@ -90,6 +90,15 @@ export function buildManifest(version: string) {
         size: '1x1',
         configPanel: 'system-health-config',
         lifecycle: 'whileEnabled'
+      },
+      {
+        id: 'polar-performance',
+        title: 'Polar performance',
+        type: 'iframe',
+        url: `${ASSET_BASE}/polar.html`,
+        size: '1x1',
+        configPanel: 'polar-performance-config',
+        lifecycle: 'whileEnabled'
       }
     ],
     panels: [
@@ -128,6 +137,13 @@ export function buildManifest(version: string) {
         title: 'System health',
         type: 'iframe',
         url: `${ASSET_BASE}/pi-config.html`,
+        lifecycle: 'onOpen'
+      },
+      {
+        id: 'polar-performance-config',
+        title: 'Polar performance',
+        type: 'iframe',
+        url: `${ASSET_BASE}/polar-config.html`,
         lifecycle: 'onOpen'
       }
     ]

@@ -28,7 +28,9 @@ export default defineConfig({
         depth: `${here}web/depth.html`,
         'depth-config': `${here}web/depth-config.html`,
         pi: `${here}web/pi.html`,
-        'pi-config': `${here}web/pi-config.html`
+        'pi-config': `${here}web/pi-config.html`,
+        polar: `${here}web/polar.html`,
+        'polar-config': `${here}web/polar-config.html`
       }
     }
   },
