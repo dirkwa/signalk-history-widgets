@@ -178,9 +178,9 @@ speed against the polar speed. The value comes from
 [Polar Performance](https://github.com/htool/signalk-polar-performance-plugin)
 (`performance.polarSpeedRatio`), which compares the boat with the polar
 chosen in [Polar Management](https://github.com/Asw1n/signalk-polar-management);
-install both, and in the Polar Performance webapp switch on the "Polar speed
-and speed ratio" group on the Outputs tab ("VMG and polar VMG ratio" for the
-VMG source); both are off by default. The tile turns yellow below 80 %; zones set in the path's
+install both, and in the Polar Performance webapp switch on "Polar speed &
+ratio" on the Outputs tab ("VMG & polar VMG" for the VMG source); both are
+off by default. The tile turns yellow below 80 %; zones set in the path's
 metadata take its place. When the polar has no target, in irons, in near
 calm or without a polar, the tile shows `--` and "No target".
 

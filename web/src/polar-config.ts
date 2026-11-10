@@ -70,7 +70,7 @@ async function main(): Promise<void> {
     <label class="row"><span>Label</span>
       <input id="label" value="${esc(config.label)}" placeholder="${esc(SOURCES[source].title)}">
     </label>
-    <p class="status">The percentage comes from Polar Performance (signalk-polar-performance-plugin), which compares the boat with the polar chosen in Polar Management. Switch on its "Polar speed and speed ratio" outputs, or "VMG and polar VMG ratio" for VMG, on its Outputs tab: both are off by default. It turns yellow below 80 %, unless the path's metadata sets its own zones.</p>
+    <p class="status">The percentage comes from Polar Performance (signalk-polar-performance-plugin), which compares the boat with the polar chosen in Polar Management. Switch on "Polar speed &amp; ratio", or "VMG &amp; polar VMG" for VMG, on its Outputs tab: both are off by default. It turns yellow below 80 %, unless the path's metadata sets its own zones.</p>
     <p class="status" id="status"></p>
     <div class="actions">
       <button type="button" id="cancel">Cancel</button>
