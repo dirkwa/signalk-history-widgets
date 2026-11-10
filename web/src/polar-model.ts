@@ -126,3 +126,35 @@ export class RatioAverage {
     return sum / this.samples.length
   }
 }
+
+/**
+ * Loads the settings one reload at a time, in order, so the newest settings
+ * decide the source and a failed attempt cannot undo a later one. `follow`
+ * runs only when the source changes. A failed read or follow is handed to
+ * `failed` with the reload, since no settings change may come to retry it.
+ */
+export function settingsLoader(
+  read: () => Promise<PolarConfig>,
+  follow: (config: PolarConfig) => Promise<void>,
+  failed: (err: unknown, reload: () => Promise<void>) => void
+): () => Promise<void> {
+  let following: PolarSource | undefined
+  let reloads = Promise.resolve()
+  const attempt = async (): Promise<void> => {
+    try {
+      const config = await read()
+      if (config.source === following) return
+      following = config.source
+      try {
+        await follow(config)
+      } catch (err: unknown) {
+        following = undefined
+        throw err
+      }
+    } catch (err: unknown) {
+      failed(err, load)
+    }
+  }
+  const load = (): Promise<void> => (reloads = reloads.then(attempt))
+  return load
+}

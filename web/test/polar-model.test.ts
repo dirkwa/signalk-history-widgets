@@ -5,7 +5,9 @@ import {
   RatioAverage,
   parsePolarConfig,
   ratioLevel,
-  zonesFor
+  settingsLoader,
+  zonesFor,
+  type PolarConfig
 } from '../src/polar-model.js'
 import { gaugeAngle } from '../src/polar-render.js'
 
@@ -84,5 +86,89 @@ describe('gaugeAngle', () => {
     expect(gaugeAngle(-1)).toBe(gaugeAngle(0))
     expect(gaugeAngle(5)).toBe(gaugeAngle(GAUGE_MAX))
     expect(gaugeAngle(1)).toBeGreaterThan(gaugeAngle(0.5))
+  })
+})
+
+describe('settingsLoader', () => {
+  const settings = (source: PolarConfig['source']): PolarConfig => ({ ...POLAR_DEFAULTS, source })
+
+  it('follows only a changed source, newest settings last', async () => {
+    const stored = [settings('speed'), settings('speed'), settings('vmg')]
+    const followed: string[] = []
+    const load = settingsLoader(
+      () => Promise.resolve(stored.shift() ?? POLAR_DEFAULTS),
+      (c) => {
+        followed.push(c.source)
+        return Promise.resolve()
+      },
+      () => undefined
+    )
+    await Promise.all([load(), load(), load()])
+    expect(followed).toEqual(['speed', 'vmg'])
+  })
+
+  it('retries the newest source after a failed follow', async () => {
+    let current = settings('speed')
+    const followed: string[] = []
+    let failFirst = true
+    const retries: (() => Promise<void>)[] = []
+    const load = settingsLoader(
+      () => Promise.resolve(current),
+      (c) => {
+        followed.push(c.source)
+        if (failFirst) {
+          failFirst = false
+          // The user picks VMG while the first subscription is pending.
+          current = settings('vmg')
+          return Promise.reject(new Error('subscribe failed'))
+        }
+        return Promise.resolve()
+      },
+      (_err, reload) => retries.push(reload)
+    )
+    await load()
+    expect(retries).toHaveLength(1)
+    await retries[0]?.()
+    expect(followed).toEqual(['speed', 'vmg'])
+  })
+
+  it('retries a failed settings read and follows once it succeeds', async () => {
+    let reads = 0
+    const followed: string[] = []
+    const retries: (() => Promise<void>)[] = []
+    const load = settingsLoader(
+      () =>
+        ++reads === 1 ? Promise.reject(new Error('no state')) : Promise.resolve(settings('vmg')),
+      (c) => {
+        followed.push(c.source)
+        return Promise.resolve()
+      },
+      (_err, reload) => retries.push(reload)
+    )
+    await load()
+    expect(followed).toEqual([])
+    await retries[0]?.()
+    expect(followed).toEqual(['vmg'])
+  })
+
+  it('follows the same source again after a failed follow', async () => {
+    let fail = true
+    let follows = 0
+    const retries: (() => Promise<void>)[] = []
+    const load = settingsLoader(
+      () => Promise.resolve(settings('speed')),
+      () => {
+        follows++
+        if (fail) {
+          fail = false
+          return Promise.reject(new Error('subscribe failed'))
+        }
+        return Promise.resolve()
+      },
+      (_err, reload) => retries.push(reload)
+    )
+    await load()
+    await retries[0]?.()
+    expect(follows).toBe(2)
   })
 })

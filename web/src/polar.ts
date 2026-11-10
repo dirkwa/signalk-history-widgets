@@ -13,6 +13,7 @@ import {
   SOURCES,
   parsePolarConfig,
   ratioLevel,
+  settingsLoader,
   zonesFor,
   type PolarConfig
 } from './polar-model.js'
@@ -36,7 +37,6 @@ let target: { time: number; value: number } | undefined
 let drawQueued = false
 let unsubscribe: (() => Promise<void>) | undefined
 let generation = 0
-let following: PolarConfig['source'] | undefined
 
 function detailText(ratio: number | undefined, now: number): string {
   if (average.noTarget) return 'No target'
@@ -123,29 +123,18 @@ async function main(client: ExtensionClient): Promise<void> {
   new ResizeObserver(queueRender).observe(canvas)
   // Keeps the average moving, and greys out a plugin that stopped.
   setInterval(queueRender, REDRAW_MS)
-  const applySettings = async () => {
-    try {
-      const next = parsePolarConfig(await client.state.get())
-      config = next
-      if (next.source !== following) {
-        following = next.source
-        await follow(client).catch((err: unknown) => {
-          // follow() has already let go of the previous source, so the tile
-          // stays dead unless it tries again.
-          following = undefined
-          setTimeout(() => void loadSettings(), RETRY_MS)
-          throw err
-        })
-      }
+  const loadSettings = settingsLoader(
+    async () => {
+      config = parsePolarConfig(await client.state.get())
       queueRender()
-    } catch (err: unknown) {
-      console.warn('polar: settings unavailable', err)
+      return config
+    },
+    () => follow(client),
+    (err, reload) => {
+      console.warn('polar: settings or subscription unavailable', err)
+      setTimeout(() => void reload(), RETRY_MS)
     }
-  }
-  // One reload at a time, in order: the newest settings decide the source,
-  // and a failed subscription cannot undo a later one.
-  let reloads = Promise.resolve()
-  const loadSettings = (): Promise<void> => (reloads = reloads.then(applySettings))
+  )
   await client.subscribe(['state.changed'], () => {
     void loadSettings()
   })
