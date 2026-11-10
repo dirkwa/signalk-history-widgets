@@ -98,6 +98,9 @@ async function follow(client: ExtensionClient): Promise<void> {
   const clock = new SourceClock()
   average = new RatioAverage()
   target = undefined
+  // The new source's metadata may take a while, or never come.
+  zones = zonesFor(undefined)
+  speedDisplay = resolveDisplay({ units: 'm/s' }, undefined, 1)
   const next = await client.signalk.subscribe([spec.ratioPath, spec.targetPath], (ev) => {
     // The previous source may still deliver until its unsubscribe lands.
     if (mine !== generation) return
