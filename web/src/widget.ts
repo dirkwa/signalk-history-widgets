@@ -3,7 +3,14 @@
 // configuration panel writes, and a change there rebuilds the strip.
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
-import { isSignedAngle, labelFor, parseConfig, windowMs, type StripConfig } from './config-model.js'
+import {
+  isSignedAngle,
+  labelFor,
+  parseConfig,
+  referenceFor,
+  windowMs,
+  type StripConfig
+} from './config-model.js'
 import { REQUEST_TIMEOUT_MS, fetchHistory, fetchHistoryWhenReady } from './history.js'
 import { followNightMode, installLongPress } from './host.js'
 import { DAY, NIGHT, draw, type Frame } from './render.js'
@@ -80,6 +87,7 @@ function frame(now: number): Frame {
     stats,
     // A steady value still draws inside a range, not stretched edge to edge.
     minSpan: MIN_SPAN_DISPLAY_UNITS * unitSpan,
+    reference: s.display.angular ? undefined : referenceFor(s.config.path),
     message: s.loading ? 'Loading…' : 'No data',
     palette
   }

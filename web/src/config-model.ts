@@ -41,8 +41,25 @@ export const COMMON_PATHS: readonly { path: string; label: string; title: string
   { path: 'environment.depth.belowTransducer', label: 'Depth', title: 'Depth' },
   { path: 'environment.outside.pressure', label: 'Baro', title: 'Air pressure' },
   { path: 'environment.outside.temperature', label: 'Air', title: 'Air temperature' },
-  { path: 'environment.water.temperature', label: 'Water', title: 'Water temperature' }
+  { path: 'environment.water.temperature', label: 'Water', title: 'Water temperature' },
+  { path: 'performance.polarSpeedRatio', label: 'Polar %', title: 'Boat speed against the polar' },
+  {
+    path: 'performance.polarVelocityMadeGoodRatio',
+    label: 'VMG %',
+    title: 'VMG against the polar'
+  }
 ]
+
+// Paths that read against the polar, where 100 % is the line that matters.
+const POLAR_RATIO_PATHS: ReadonlySet<string> = new Set([
+  'performance.polarSpeedRatio',
+  'performance.polarVelocityMadeGoodRatio'
+])
+
+/** A value the strip marks and always keeps in view, in the path's SI unit. */
+export function referenceFor(path: string): number | undefined {
+  return POLAR_RATIO_PATHS.has(path) ? 1 : undefined
+}
 
 export function labelFor(config: StripConfig): string {
   if (config.label) return config.label
