@@ -3,10 +3,11 @@
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import { installLongPress, followNightMode } from './host.js'
+import { followScreenScheme, paletteFor, screenIsLight } from './theme.js'
 import { fetchMeta } from './signalk.js'
 import { SourceClock } from './steer-model.js'
 import type { Zone } from './level-model.js'
-import { LEVEL_DAY, LEVEL_NIGHT } from './level-render.js'
+import { LEVEL_DAY, LEVEL_LIGHT, LEVEL_NIGHT } from './level-render.js'
 import {
   POLAR_DEFAULTS,
   RatioAverage,
@@ -54,7 +55,12 @@ function frame(now: number): PolarFrame {
     text: ratio === undefined ? '--' : `${Math.round(ratio * 100)} %`,
     detail: detailText(ratio, now),
     level: ratio === undefined ? 'ok' : ratioLevel(ratio, zones),
-    palette: night ? LEVEL_NIGHT : LEVEL_DAY
+    palette: paletteFor(
+      { dark: LEVEL_DAY, light: LEVEL_LIGHT, night: LEVEL_NIGHT },
+      config.theme,
+      night,
+      screenIsLight()
+    )
   }
 }
 
@@ -159,6 +165,7 @@ async function main(client: ExtensionClient): Promise<void> {
   }).catch((err: unknown) => {
     console.warn('polar: night mode unavailable', err)
   })
+  followScreenScheme(queueRender)
   await loadSettings()
 }
 

@@ -19,7 +19,11 @@ describe('parseDepthConfig', () => {
   })
 
   it('keeps a known depth and an offered window, and drops the rest', () => {
-    expect(parseDepthConfig({ path: KEEL, minutes: 360 })).toEqual({ path: KEEL, minutes: 360 })
+    expect(parseDepthConfig({ path: KEEL, minutes: 360, theme: 'auto' })).toEqual({
+      path: KEEL,
+      minutes: 360,
+      theme: 'auto'
+    })
     expect(parseDepthConfig({ path: 'navigation.speedOverGround', minutes: 7 })).toEqual(
       DEPTH_DEFAULTS
     )
@@ -28,7 +32,7 @@ describe('parseDepthConfig', () => {
 
 describe('depthPath', () => {
   it('prefers below surface, then transducer, then keel', () => {
-    const auto = { path: '', minutes: 30 }
+    const auto = { ...DEPTH_DEFAULTS, path: '' }
     expect(depthPath(auto, new Set([KEEL, TRANSDUCER, SURFACE]))).toBe(SURFACE)
     expect(depthPath(auto, new Set([KEEL, TRANSDUCER]))).toBe(TRANSDUCER)
     expect(depthPath(auto, new Set([KEEL]))).toBe(KEEL)
@@ -36,7 +40,7 @@ describe('depthPath', () => {
   })
 
   it('keeps a chosen depth even when the server lacks it right now', () => {
-    expect(depthPath({ path: KEEL, minutes: 30 }, new Set([SURFACE]))).toBe(KEEL)
+    expect(depthPath({ ...DEPTH_DEFAULTS, path: KEEL }, new Set([SURFACE]))).toBe(KEEL)
   })
 })
 

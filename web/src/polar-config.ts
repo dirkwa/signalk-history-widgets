@@ -4,6 +4,7 @@
 
 import { connectExtension } from 'signalk-plotterext-bus/extension'
 import { AVERAGE_CHOICES, SOURCES, parsePolarConfig, type PolarSource } from './polar-model.js'
+import { chosenTheme, themeChips, wireThemeChips } from './theme.js'
 import './config.css'
 
 function el(id: string): HTMLElement {
@@ -67,6 +68,8 @@ async function main(): Promise<void> {
       <button type="button" class="chip" data-detail>Show</button>
       <button type="button" class="chip" data-detail>Hide</button>
     </div>
+    <div class="section-title">Background</div>
+    ${themeChips(config.theme)}
     <label class="row"><span>Label</span>
       <input id="label" value="${esc(config.label)}" placeholder="${esc(SOURCES[source].title)}">
     </label>
@@ -98,12 +101,13 @@ async function main(): Promise<void> {
     (v) => (showDetail = v),
     (v) => v === showDetail
   )
+  wireThemeChips()
 
   el('save').addEventListener('click', () => {
     const input = el('label')
     const label = input instanceof HTMLInputElement ? input.value.trim() : ''
     client.state
-      .set({ source, averageSeconds, showDetail, label })
+      .set({ source, averageSeconds, showDetail, label, theme: chosenTheme() })
       .then(() => client.call('ui.closePanel'))
       .catch((err: unknown) => {
         el('status').textContent =

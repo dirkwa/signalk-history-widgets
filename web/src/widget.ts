@@ -13,7 +13,8 @@ import {
 } from './config-model.js'
 import { REQUEST_TIMEOUT_MS, fetchHistory, fetchHistoryWhenReady } from './history.js'
 import { followNightMode, installLongPress } from './host.js'
-import { DAY, NIGHT, draw, type Frame } from './render.js'
+import { DAY, LIGHT, NIGHT, draw, type Frame } from './render.js'
+import { followScreenScheme, paletteFor, screenIsLight } from './theme.js'
 import { Series, wrapAngle } from './series.js'
 import { fetchMeta } from './signalk.js'
 import { convert, resolveDisplay, type Display } from './units.js'
@@ -55,7 +56,12 @@ function text(si: number | undefined, s: Strip): string {
 }
 
 function frame(now: number): Frame {
-  const palette = night ? NIGHT : DAY
+  const palette = paletteFor(
+    { dark: DAY, light: LIGHT, night: NIGHT },
+    strip?.config.theme ?? 'dark',
+    night,
+    screenIsLight()
+  )
   const s = strip
   if (!s) {
     return {
@@ -188,6 +194,7 @@ async function main(): Promise<void> {
   }).catch((err: unknown) => {
     console.warn('history strip: night mode unavailable', err)
   })
+  followScreenScheme(queueRender)
   await apply(client)
 }
 

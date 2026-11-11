@@ -38,6 +38,17 @@ export const LEVEL_DAY: LevelPalette = {
   mark: { ok: '#66bb6a', warn: '#fdd835', alarm: '#e53935' }
 }
 
+export const LEVEL_LIGHT: LevelPalette = {
+  card: 'rgba(246, 248, 250, 0.9)',
+  text: '#1d2329',
+  muted: '#546e7a',
+  glass: 'rgba(0, 0, 0, 0.04)',
+  glassEdge: 'rgba(84, 110, 122, 0.75)',
+  glint: 'rgba(255, 255, 255, 0.55)',
+  liquid: LEVEL_DAY.liquid,
+  mark: { ok: '#2e7d32', warn: '#f9a825', alarm: '#c62828' }
+}
+
 // Night keeps the three colours, dark enough not to spoil night vision.
 export const LEVEL_NIGHT: LevelPalette = {
   card: 'rgba(8, 0, 0, 0.85)',

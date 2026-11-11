@@ -54,7 +54,7 @@ a clock, a depth profile and a system health tile.
 - **Widget state keys** (strip: `path`, `label`, `span`, `spanUnit`, `unit`,
   `decimals`; wind steering: `dial`, `north`, `trueWind`, `closeHauled`,
   `shiftSeconds`, `show*`; tank and battery: `path`, `label`, `style`, `showDetail`; clock: `zone`,
-  `hours`, `seconds`, `showDate`, `label`; depth profile: `path`, `minutes`; system health: `label`, `showStorage`) are stored by the host per instance. Renaming one loses users'
+  `hours`, `seconds`, `showDate`, `label`; depth profile: `path`, `minutes`; system health: `label`, `showStorage`; every widget: `theme`) are stored by the host per instance. Renaming one loses users'
   settings; add new keys instead.
 
 ## Gotchas

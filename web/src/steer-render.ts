@@ -36,6 +36,22 @@ export const STEER_DAY: SteerPalette = {
   current: '#26c6da'
 }
 
+export const STEER_LIGHT: SteerPalette = {
+  card: 'rgba(246, 248, 250, 0.9)',
+  ring: '#b0bec5',
+  ringText: '#1d2329',
+  text: '#1d2329',
+  muted: '#546e7a',
+  port: '#e53935',
+  starboard: '#43a047',
+  apparent: '#0288d1',
+  trueWind: '#f57c00',
+  shift: 'rgba(245, 124, 0, 0.25)',
+  waypoint: '#8e24aa',
+  course: '#d81b60',
+  current: '#00838f'
+}
+
 export const STEER_NIGHT: SteerPalette = {
   card: 'rgba(8, 0, 0, 0.85)',
   ring: '#4a0c0c',

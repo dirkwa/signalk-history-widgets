@@ -2,6 +2,8 @@
 // publishes about the computer Signal K runs on, and when a reading turns
 // yellow or red. Pure, so it runs under the unit tests.
 
+import { parseTheme, type Theme } from './theme.js'
+
 import { levelOf, parseZones, zoneState, type Level, type Zone } from './level-model.js'
 
 /** signalk-rpi-stats' default prefix, which the Universal Installer keeps. */
@@ -61,15 +63,18 @@ export interface PiConfig {
   /** Blank shows `System`. */
   label: string
   showStorage: boolean
+  /** The card behind the widget; night mode overrides it. */
+  theme: Theme
 }
 
-export const PI_DEFAULTS: PiConfig = { label: '', showStorage: false }
+export const PI_DEFAULTS: PiConfig = { label: '', showStorage: false, theme: 'dark' }
 
 export function parsePiConfig(stored: unknown): PiConfig {
   const s = typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>) : {}
   return {
     label: typeof s.label === 'string' ? s.label : PI_DEFAULTS.label,
-    showStorage: typeof s.showStorage === 'boolean' ? s.showStorage : PI_DEFAULTS.showStorage
+    showStorage: typeof s.showStorage === 'boolean' ? s.showStorage : PI_DEFAULTS.showStorage,
+    theme: parseTheme(s.theme)
   }
 }
 

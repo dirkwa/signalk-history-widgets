@@ -11,6 +11,7 @@ import {
   type ClockConfig
 } from './clock-model.js'
 import { fetchValue } from './signalk.js'
+import { themeChips, wireThemeChips } from './theme.js'
 import './config.css'
 
 type Choice<K extends keyof ClockConfig> = {
@@ -98,6 +99,7 @@ async function main(): Promise<void> {
           )
           .join('')}</div></div>`
       ).join('')}
+      <div class="row"><span>Background</span>${themeChips(config.theme)}</div>
       <label class="row"><span>Label</span>
         <input id="label" type="text" placeholder="Automatic" value="${esc(config.label)}">
       </label>
@@ -110,7 +112,7 @@ async function main(): Promise<void> {
       </div>`
     updatePreview()
     el('label').addEventListener('input', updatePreview)
-    for (const button of root.querySelectorAll<HTMLButtonElement>('.chip')) {
+    for (const button of root.querySelectorAll<HTMLButtonElement>('[data-key]')) {
       button.addEventListener('click', () => {
         const choice = CHOICES.find((c) => c.key === button.dataset.key)
         const option = choice?.options[Number(button.dataset.index)]
@@ -120,6 +122,9 @@ async function main(): Promise<void> {
         draw()
       })
     }
+    wireThemeChips((theme) => {
+      config.theme = theme
+    })
     el('save').addEventListener('click', () => {
       config.label = labelText()
       client.state

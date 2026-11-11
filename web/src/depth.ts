@@ -4,9 +4,10 @@
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import { DEPTH_PATHS, depthPath, depthTitle, parseDepthConfig } from './depth-model.js'
-import { DEPTH_DAY, DEPTH_NIGHT, drawDepth, type DepthFrame } from './depth-render.js'
+import { DEPTH_DAY, DEPTH_LIGHT, DEPTH_NIGHT, drawDepth, type DepthFrame } from './depth-render.js'
 import { REQUEST_TIMEOUT_MS, fetchHistory, fetchHistoryWhenReady } from './history.js'
 import { followNightMode, installLongPress } from './host.js'
+import { type Theme, followScreenScheme, paletteFor, screenIsLight } from './theme.js'
 import { Series } from './series.js'
 import { fetchMeta, readValue } from './signalk.js'
 import { convert, resolveDisplay, type Display } from './units.js'
@@ -24,6 +25,7 @@ interface Profile {
   series: Series
   last?: { time: number; value: number }
   loading: boolean
+  theme: Theme
 }
 
 const canvas = document.createElement('canvas')
@@ -36,7 +38,12 @@ let timer: ReturnType<typeof setInterval> | undefined
 let drawQueued = false
 
 function frame(now: number): DepthFrame {
-  const palette = night ? DEPTH_NIGHT : DEPTH_DAY
+  const palette = paletteFor(
+    { dark: DEPTH_DAY, light: DEPTH_LIGHT, night: DEPTH_NIGHT },
+    profile?.theme ?? 'dark',
+    night,
+    screenIsLight()
+  )
   const s = profile
   if (!s) {
     return { title: 'Depth', value: '--', symbol: '', windowMs: 1, bands: [], message: '', palette }
@@ -120,7 +127,8 @@ async function apply(client: ExtensionClient): Promise<void> {
     path,
     display: resolveDisplay({ ...meta, units: meta?.units ?? 'm' }, undefined, -1),
     series: new Series(config.minutes * 60_000, false),
-    loading: true
+    loading: true,
+    theme: config.theme
   }
   const next = await client.signalk.subscribe([path], (ev) => {
     if (typeof ev.value !== 'number' || !Number.isFinite(ev.value)) return
@@ -176,6 +184,7 @@ async function main(): Promise<void> {
   }).catch((err: unknown) => {
     console.warn('depth profile: night mode unavailable', err)
   })
+  followScreenScheme(queueRender)
   load(client)
 }
 

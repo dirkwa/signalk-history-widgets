@@ -18,8 +18,14 @@ describe('parsePolarConfig', () => {
       parsePolarConfig({ source: 'sog', averageSeconds: 7, showDetail: 'no', label: 1 })
     ).toEqual(POLAR_DEFAULTS)
     expect(
-      parsePolarConfig({ source: 'vmg', averageSeconds: 30, showDetail: false, label: 'VMG' })
-    ).toEqual({ source: 'vmg', averageSeconds: 30, showDetail: false, label: 'VMG' })
+      parsePolarConfig({
+        source: 'vmg',
+        averageSeconds: 30,
+        showDetail: false,
+        label: 'VMG',
+        theme: 'auto'
+      })
+    ).toEqual({ source: 'vmg', averageSeconds: 30, showDetail: false, label: 'VMG', theme: 'auto' })
   })
 })
 

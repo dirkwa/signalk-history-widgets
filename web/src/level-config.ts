@@ -7,6 +7,7 @@ import { connectExtension } from 'signalk-plotterext-bus/extension'
 import { fetchNumericPaths, type PathInfo } from './signalk.js'
 import { KINDS, parseLevelConfig, type KindSpec, type LevelKind } from './level-model.js'
 import { convert, resolveDisplay } from './units.js'
+import { chosenTheme, themeChips, wireThemeChips } from './theme.js'
 import './config.css'
 
 function esc(s: string): string {
@@ -106,6 +107,8 @@ async function main(kind: LevelKind): Promise<void> {
       ],
       String(showDetail)
     )}
+    <div class="section-title">Background</div>
+    ${themeChips(config.theme)}
     <p class="status">Colours follow the zones set for the path in the server's metadata: green when normal, yellow for alert and warn, red for alarm and emergency.</p>
     <p class="status" id="status"></p>
     <div class="actions sticky">
@@ -127,11 +130,18 @@ async function main(kind: LevelKind): Promise<void> {
   onChoice('detail', (v) => {
     showDetail = v === 'true'
   })
+  wireThemeChips()
 
   const status = el('status')
   el('save').addEventListener('click', () => {
     client.state
-      .set({ path: selected, label: textInput('label').value.trim(), style, showDetail })
+      .set({
+        path: selected,
+        label: textInput('label').value.trim(),
+        style,
+        showDetail,
+        theme: chosenTheme()
+      })
       .then(() => client.call('ui.closePanel'))
       .catch((err: unknown) => {
         status.textContent = `Save failed: ${err instanceof Error ? err.message : String(err)}`

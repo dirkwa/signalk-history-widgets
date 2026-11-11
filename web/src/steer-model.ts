@@ -3,6 +3,8 @@
 // drawing serves a compass card turning with the heading and a fixed
 // bow-up wind card.
 
+import { parseTheme, type Theme } from './theme.js'
+
 export type NorthReference = 'true' | 'magnetic'
 export type DialMode = 'compass' | 'wind'
 export type TrueWindReference = 'water' | 'ground'
@@ -22,6 +24,8 @@ export interface SteerConfig {
   showCourse: boolean
   showCurrent: boolean
   showRudder: boolean
+  /** The card behind the widget; night mode overrides it. */
+  theme: Theme
 }
 
 export const DEFAULT_STEER_CONFIG: SteerConfig = {
@@ -35,7 +39,8 @@ export const DEFAULT_STEER_CONFIG: SteerConfig = {
   showWaypoint: true,
   showCourse: true,
   showCurrent: true,
-  showRudder: true
+  showRudder: true,
+  theme: 'dark'
 }
 
 export const CLOSE_HAULED_RANGE = { min: 20, max: 80 } as const
@@ -70,7 +75,8 @@ export function parseSteerConfig(stored: Record<string, unknown>): SteerConfig {
     showWaypoint: bool(stored.showWaypoint, d.showWaypoint),
     showCourse: bool(stored.showCourse, d.showCourse),
     showCurrent: bool(stored.showCurrent, d.showCurrent),
-    showRudder: bool(stored.showRudder, d.showRudder)
+    showRudder: bool(stored.showRudder, d.showRudder),
+    theme: parseTheme(stored.theme)
   }
 }
 

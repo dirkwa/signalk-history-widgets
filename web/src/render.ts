@@ -26,6 +26,16 @@ export const DAY: Palette = {
   reference: 'rgba(232, 237, 242, 0.85)'
 }
 
+export const LIGHT: Palette = {
+  card: 'rgba(246, 248, 250, 0.9)',
+  text: '#1d2329',
+  muted: '#546e7a',
+  bar: '#0288d1',
+  avg: '#d32f2f',
+  grid: 'rgba(0, 0, 0, 0.18)',
+  reference: 'rgba(29, 35, 41, 0.8)'
+}
+
 export const NIGHT: Palette = {
   card: 'rgba(8, 0, 0, 0.85)',
   text: '#d32f2f',

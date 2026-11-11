@@ -11,6 +11,7 @@ import {
 } from './depth-model.js'
 import { fetchMeta, fetchValue } from './signalk.js'
 import { convert, resolveDisplay } from './units.js'
+import { themeChips, wireThemeChips } from './theme.js'
 import './config.css'
 
 function esc(s: string): string {
@@ -68,6 +69,7 @@ async function main(): Promise<void> {
         (m) =>
           `<button type="button" class="chip${m === config.minutes ? ' on' : ''}" data-minutes="${m}">${windowLabel(m)}</button>`
       ).join('')}</div></div>
+      <div class="row"><span>Background</span>${themeChips(config.theme)}</div>
       <p class="status">Automatic follows the depth below the surface when the server has it, else below the transducer or the keel.</p>
       <p class="status" id="status"></p>
       <div class="actions">
@@ -86,6 +88,9 @@ async function main(): Promise<void> {
         draw()
       })
     }
+    wireThemeChips((theme) => {
+      config.theme = theme
+    })
     el('save').addEventListener('click', () => {
       client.state
         .set({ ...config })

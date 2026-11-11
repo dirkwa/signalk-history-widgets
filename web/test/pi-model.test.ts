@@ -15,9 +15,10 @@ describe('parsePiConfig', () => {
   it('falls back to the defaults for missing or mistyped settings', () => {
     expect(parsePiConfig(undefined)).toEqual(PI_DEFAULTS)
     expect(parsePiConfig({ label: 3, showStorage: 'yes' })).toEqual(PI_DEFAULTS)
-    expect(parsePiConfig({ label: 'Salon', showStorage: true })).toEqual({
+    expect(parsePiConfig({ label: 'Salon', showStorage: true, theme: 'light' })).toEqual({
       label: 'Salon',
-      showStorage: true
+      showStorage: true,
+      theme: 'light'
     })
   })
 })

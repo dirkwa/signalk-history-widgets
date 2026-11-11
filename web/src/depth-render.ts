@@ -14,6 +14,8 @@ export interface DepthPalette {
   text: string
   muted: string
   grid: string
+  /** Behind the reading, to keep it readable over a shoal. */
+  halo: string
 }
 
 export const DEPTH_DAY: DepthPalette = {
@@ -24,7 +26,20 @@ export const DEPTH_DAY: DepthPalette = {
   seabedEdge: '#d7ccc8',
   text: '#e8edf2',
   muted: '#9fb3c4',
-  grid: 'rgba(255, 255, 255, 0.22)'
+  grid: 'rgba(255, 255, 255, 0.22)',
+  halo: 'rgba(0, 0, 0, 0.8)'
+}
+
+export const DEPTH_LIGHT: DepthPalette = {
+  card: 'rgba(246, 248, 250, 0.9)',
+  waterTop: 'rgba(41, 182, 246, 0.22)',
+  waterBottom: 'rgba(13, 71, 161, 0.4)',
+  seabed: '#a1887f',
+  seabedEdge: '#5d4037',
+  text: '#1d2329',
+  muted: '#546e7a',
+  grid: 'rgba(0, 0, 0, 0.18)',
+  halo: 'rgba(255, 255, 255, 0.9)'
 }
 
 export const DEPTH_NIGHT: DepthPalette = {
@@ -35,7 +50,8 @@ export const DEPTH_NIGHT: DepthPalette = {
   seabedEdge: '#b71c1c',
   text: '#d32f2f',
   muted: '#8e2424',
-  grid: 'rgba(211, 47, 47, 0.3)'
+  grid: 'rgba(211, 47, 47, 0.3)',
+  halo: 'rgba(0, 0, 0, 0.8)'
 }
 
 /** One time bucket's depths in display units, shallowest and deepest. */
@@ -164,7 +180,7 @@ export function drawDepth(
 
   // The reading sits top left; a shadow keeps it readable over a shoal.
   ctx.save()
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
+  ctx.shadowColor = p.halo
   ctx.shadowBlur = 4
   ctx.textAlign = 'left'
   ctx.fillStyle = p.muted
