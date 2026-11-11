@@ -91,3 +91,24 @@ export function onResume(reload: () => Promise<void>): void {
     lastCheck = now
   }, RESUME_CHECK_MS)
 }
+
+/**
+ * Follows the background opacity the user chose for every panel on the chart
+ * (`display.panelOpacity`); null while they chose none or the host offers no
+ * `display`, and the widget keeps its own.
+ */
+export async function followPanelOpacity(
+  client: ExtensionClient,
+  onChange: (panelOpacity: number | null) => void
+): Promise<void> {
+  if (!client.hasCapability('display')) return
+  await client.subscribe(['display.changed'], (_name, params) => {
+    onChange(parsePanelOpacity(params))
+  })
+  onChange(parsePanelOpacity(await client.call('display.get')))
+}
+
+export function parsePanelOpacity(params: unknown): number | null {
+  const v = (params as { panelOpacity?: unknown } | undefined)?.panelOpacity
+  return typeof v === 'number' && v >= 0 && v <= 1 ? v : null
+}

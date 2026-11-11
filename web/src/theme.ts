@@ -30,6 +30,22 @@ export function paletteFor<P>(
   return theme === 'light' || (theme === 'auto' && screenLight) ? palettes.light : palettes.dark
 }
 
+const RGBA = /^rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)$/
+
+/**
+ * The palette with its card at the opacity the host's user chose for every
+ * panel on the chart, or unchanged when they chose none.
+ */
+export function withPanelOpacity<P extends { card: string }>(
+  palette: P,
+  panelOpacity: number | null
+): P {
+  if (panelOpacity === null) return palette
+  const m = RGBA.exec(palette.card)
+  if (!m) return palette
+  return { ...palette, card: `rgba(${m[1]}, ${m[2]}, ${m[3]}, ${panelOpacity})` }
+}
+
 const LIGHT_SCREEN = '(prefers-color-scheme: light)'
 
 export function screenIsLight(): boolean {

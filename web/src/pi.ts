@@ -3,8 +3,8 @@
 // them, each in the colour of its zone.
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
-import { installLongPress, followNightMode } from './host.js'
-import { followScreenScheme, paletteFor, screenIsLight } from './theme.js'
+import { followNightMode, followPanelOpacity, installLongPress } from './host.js'
+import { followScreenScheme, paletteFor, screenIsLight, withPanelOpacity } from './theme.js'
 import { fetchMeta } from './signalk.js'
 import { SourceClock } from './steer-model.js'
 import type { Zone } from './level-model.js'
@@ -40,6 +40,7 @@ const canvas = document.createElement('canvas')
 document.getElementById('root')?.append(canvas)
 let config: PiConfig = parsePiConfig({})
 let night = false
+let panelOpacity: number | null = null
 let temperatureDisplay: Display = resolveDisplay({ units: 'K' }, undefined, 0)
 const zones = Object.fromEntries(METRICS.map((m) => [m, zonesFor(m, undefined)])) as Record<
   Metric,
@@ -87,11 +88,14 @@ function frame(now: number): PiFrame {
       known: temperature !== undefined
     },
     bars,
-    palette: paletteFor(
-      { dark: LEVEL_DAY, light: LEVEL_LIGHT, night: LEVEL_NIGHT },
-      config.theme,
-      night,
-      screenIsLight()
+    palette: withPanelOpacity(
+      paletteFor(
+        { dark: LEVEL_DAY, light: LEVEL_LIGHT, night: LEVEL_NIGHT },
+        config.theme,
+        night,
+        screenIsLight()
+      ),
+      panelOpacity
     )
   }
 }
@@ -149,6 +153,12 @@ async function main(client: ExtensionClient): Promise<void> {
     queueRender()
   }).catch((err: unknown) => {
     console.warn('system: night mode unavailable', err)
+  })
+  await followPanelOpacity(client, (opacity) => {
+    panelOpacity = opacity
+    queueRender()
+  }).catch((err: unknown) => {
+    console.warn('system: panel opacity unavailable', err)
   })
   followScreenScheme(queueRender)
   await loadSettings()

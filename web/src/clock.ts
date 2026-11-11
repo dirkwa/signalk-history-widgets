@@ -3,8 +3,8 @@
 // off. Settings come from the instance state the configuration panel writes.
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
-import { installLongPress, followNightMode } from './host.js'
-import { followScreenScheme, paletteFor, screenIsLight } from './theme.js'
+import { followNightMode, followPanelOpacity, installLongPress } from './host.js'
+import { followScreenScheme, paletteFor, screenIsLight, withPanelOpacity } from './theme.js'
 import {
   CLOCK_PATHS,
   BoatZoneReadings,
@@ -23,6 +23,7 @@ const canvas = document.createElement('canvas')
 document.getElementById('root')?.append(canvas)
 let config: ClockConfig = parseClockConfig({})
 let night = false
+let panelOpacity: number | null = null
 const gps = new GpsClock()
 const zone = new BoatZoneReadings()
 let drawQueued = false
@@ -46,11 +47,14 @@ function render(): void {
     keep: text.fallback ? text.zoneName : undefined,
     time: text.time,
     date: config.showDate ? text.date : '',
-    palette: paletteFor(
-      { dark: CLOCK_DAY, light: CLOCK_LIGHT, night: CLOCK_NIGHT },
-      config.theme,
-      night,
-      screenIsLight()
+    palette: withPanelOpacity(
+      paletteFor(
+        { dark: CLOCK_DAY, light: CLOCK_LIGHT, night: CLOCK_NIGHT },
+        config.theme,
+        night,
+        screenIsLight()
+      ),
+      panelOpacity
     )
   })
 }
@@ -88,6 +92,12 @@ async function main(client: ExtensionClient): Promise<void> {
     queueRender()
   }).catch((err: unknown) => {
     console.warn('clock: night mode unavailable', err)
+  })
+  await followPanelOpacity(client, (opacity) => {
+    panelOpacity = opacity
+    queueRender()
+  }).catch((err: unknown) => {
+    console.warn('clock: panel opacity unavailable', err)
   })
   followScreenScheme(queueRender)
   tick()
