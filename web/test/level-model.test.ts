@@ -27,13 +27,15 @@ describe('parseLevelConfig', () => {
         path: 'tanks.fuel.0.currentLevel',
         label: 'Port',
         style: 'flat',
-        showDetail: false
+        showDetail: false,
+        theme: 'light'
       })
     ).toEqual({
       path: 'tanks.fuel.0.currentLevel',
       label: 'Port',
       style: 'flat',
-      showDetail: false
+      showDetail: false,
+      theme: 'light'
     })
   })
 })

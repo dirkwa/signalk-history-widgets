@@ -5,6 +5,7 @@
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import { installLongPress, followNightMode } from './host.js'
+import { followScreenScheme, paletteFor, screenIsLight } from './theme.js'
 import { fetchMeta } from './signalk.js'
 import {
   ShiftWindow,
@@ -20,7 +21,14 @@ import {
   type SteerConfig,
   type SteerKey
 } from './steer-model.js'
-import { STEER_DAY, STEER_NIGHT, drawSteer, type Readout, type SteerFrame } from './steer-render.js'
+import {
+  STEER_DAY,
+  STEER_LIGHT,
+  STEER_NIGHT,
+  drawSteer,
+  type Readout,
+  type SteerFrame
+} from './steer-render.js'
 import { convert, resolveDisplay, type Display } from './units.js'
 import './styles.css'
 
@@ -75,7 +83,12 @@ function angleReadout(label: string, a: number | undefined): Readout {
 }
 
 function frame(now: number): SteerFrame {
-  const palette = night ? STEER_NIGHT : STEER_DAY
+  const palette = paletteFor(
+    { dark: STEER_DAY, light: STEER_LIGHT, night: STEER_NIGHT },
+    state?.config.theme ?? 'dark',
+    night,
+    screenIsLight()
+  )
   const blank = { label: '', value: '', unit: '' }
   const s = state
   if (!s) {
@@ -218,6 +231,7 @@ async function main(): Promise<void> {
   }).catch((err: unknown) => {
     console.warn('wind steering: night mode unavailable', err)
   })
+  followScreenScheme(queueRender)
   await apply(client)
 }
 

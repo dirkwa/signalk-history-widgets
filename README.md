@@ -37,6 +37,13 @@ rows of the widget area):
 For several values, place several strips next to each other. Press and hold a
 placed widget to change it or remove it.
 
+Every widget draws on a dark card unless you pick another **Background** in
+its settings: **Light** for a bright screen in daylight, or **Auto** to follow
+the screen's light or dark setting. In Freeboard-SK's night mode every widget
+turns red on black, whatever its background.
+
+![The widgets on a light and on a dark background](docs/screenshots/light-background.png)
+
 ![Configuration](docs/screenshots/config.png)
 
 ## History

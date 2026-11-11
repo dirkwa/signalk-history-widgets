@@ -5,6 +5,7 @@
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import { installLongPress, followNightMode } from './host.js'
+import { followScreenScheme, paletteFor, screenIsLight } from './theme.js'
 import { fetchMeta, fetchValue } from './signalk.js'
 import { SourceClock } from './steer-model.js'
 import {
@@ -19,7 +20,7 @@ import {
   type LevelKind,
   type Zone
 } from './level-model.js'
-import { LEVEL_DAY, LEVEL_NIGHT, drawLevel, type LevelFrame } from './level-render.js'
+import { LEVEL_DAY, LEVEL_LIGHT, LEVEL_NIGHT, drawLevel, type LevelFrame } from './level-render.js'
 import { convert, resolveDisplay, type Display } from './units.js'
 import './styles.css'
 
@@ -58,7 +59,12 @@ export function startLevel(kind: LevelKind): void {
     r && (!ages || now - r.time < STALE_MS) ? r.value : undefined
 
   function frame(now: number): LevelFrame {
-    const palette = night ? LEVEL_NIGHT : LEVEL_DAY
+    const palette = paletteFor(
+      { dark: LEVEL_DAY, light: LEVEL_LIGHT, night: LEVEL_NIGHT },
+      state?.config.theme ?? 'dark',
+      night,
+      screenIsLight()
+    )
     const s = state
     if (!s?.config.path) {
       return {
@@ -205,6 +211,7 @@ export function startLevel(kind: LevelKind): void {
     }).catch((err: unknown) => {
       console.warn(`${kind}: night mode unavailable`, err)
     })
+    followScreenScheme(queueRender)
     await apply(client)
   }
 

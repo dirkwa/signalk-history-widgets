@@ -3,6 +3,8 @@
 // the polar chosen in signalk-polar-management. Pure, so it runs under the
 // unit tests.
 
+import { parseTheme, type Theme } from './theme.js'
+
 import { levelOf, parseZones, zoneState, type Level, type Zone } from './level-model.js'
 
 /** Boat speed or VMG, each against what the polar predicts. */
@@ -43,13 +45,16 @@ export interface PolarConfig {
   showDetail: boolean
   /** Blank shows the source's title. */
   label: string
+  /** The card behind the widget; night mode overrides it. */
+  theme: Theme
 }
 
 export const POLAR_DEFAULTS: PolarConfig = {
   source: 'speed',
   averageSeconds: 10,
   showDetail: true,
-  label: ''
+  label: '',
+  theme: 'dark'
 }
 
 export function parsePolarConfig(stored: unknown): PolarConfig {
@@ -60,7 +65,8 @@ export function parsePolarConfig(stored: unknown): PolarConfig {
       ? (s.averageSeconds as number)
       : POLAR_DEFAULTS.averageSeconds,
     showDetail: typeof s.showDetail === 'boolean' ? s.showDetail : POLAR_DEFAULTS.showDetail,
-    label: typeof s.label === 'string' ? s.label : POLAR_DEFAULTS.label
+    label: typeof s.label === 'string' ? s.label : POLAR_DEFAULTS.label,
+    theme: parseTheme(s.theme)
   }
 }
 

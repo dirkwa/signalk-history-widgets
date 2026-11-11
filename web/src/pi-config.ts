@@ -3,6 +3,7 @@
 
 import { connectExtension } from 'signalk-plotterext-bus/extension'
 import { parsePiConfig } from './pi-model.js'
+import { chosenTheme, themeChips, wireThemeChips } from './theme.js'
 import './config.css'
 
 function el(id: string): HTMLElement {
@@ -28,6 +29,8 @@ async function main(): Promise<void> {
       <button type="button" class="chip" data-storage="true">Show</button>
       <button type="button" class="chip" data-storage="false">Hide</button>
     </div>
+    <div class="section-title">Background</div>
+    ${themeChips(config.theme)}
     <label class="row"><span>Label</span>
       <input id="label" value="${esc(config.label)}" placeholder="System">
     </label>
@@ -53,12 +56,13 @@ async function main(): Promise<void> {
     })
   }
   show()
+  wireThemeChips()
 
   el('save').addEventListener('click', () => {
     const input = el('label')
     const label = input instanceof HTMLInputElement ? input.value.trim() : ''
     client.state
-      .set({ label, showStorage })
+      .set({ label, showStorage, theme: chosenTheme() })
       .then(() => client.call('ui.closePanel'))
       .catch((err: unknown) => {
         el('status').textContent =

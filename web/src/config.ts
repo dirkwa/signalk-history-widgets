@@ -12,6 +12,7 @@ import {
 } from './config-model.js'
 import { fetchHistoryProviders, fetchNumericPaths, type PathInfo } from './signalk.js'
 import { CONVERSIONS } from './units.js'
+import { chosenTheme, themeChips, wireThemeChips } from './theme.js'
 import './config.css'
 
 function esc(s: string): string {
@@ -56,6 +57,7 @@ function form(config: StripConfig, paths: PathInfo[], providers: string[]): stri
         )
         .join('')}</div>
     </div>
+    <div class="row"><span>Background</span>${themeChips(config.theme)}</div>
     <label class="row"><span>Units</span><select id="unit"></select></label>
     <label class="row"><span>Decimals</span>
       <select id="decimals">
@@ -99,7 +101,8 @@ function read(): Record<string, unknown> {
     span: Number(span?.dataset.span),
     spanUnit: span?.dataset.spanUnit,
     unit: input('unit').value,
-    decimals: Number(input('decimals').value)
+    decimals: Number(input('decimals').value),
+    theme: chosenTheme()
   }
 }
 
@@ -115,6 +118,7 @@ async function main(): Promise<void> {
   const config = parseConfig(stored)
   root.innerHTML = form(config, paths, providers)
   fillUnits(paths, config.unit)
+  wireThemeChips()
 
   const pathInput = input('path')
   const onPath = () => {

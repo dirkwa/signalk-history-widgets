@@ -3,6 +3,7 @@
 
 import { connectExtension } from 'signalk-plotterext-bus/extension'
 import { CLOSE_HAULED_RANGE, parseSteerConfig, type SteerConfig } from './steer-model.js'
+import { chosenTheme, themeChips, wireThemeChips } from './theme.js'
 import './config.css'
 
 type Toggle =
@@ -87,6 +88,7 @@ function form(c: SteerConfig): string {
         ${[30, 60, 120, 300, 600, 1800].includes(c.shiftSeconds) ? '' : `<option value="${c.shiftSeconds}" selected>${c.shiftSeconds} s</option>`}
       </select>
     </label>
+    <div class="row"><span>Background</span>${themeChips(c.theme)}</div>
     <div class="toggles">
       ${TOGGLES.map(
         (t) =>
@@ -107,7 +109,8 @@ function read(): Record<string, unknown> {
     north: field('north').value,
     trueWind: field('trueWind').value,
     closeHauled: Number(field('closeHauled').value),
-    shiftSeconds: Number(field('shiftSeconds').value)
+    shiftSeconds: Number(field('shiftSeconds').value),
+    theme: chosenTheme()
   }
   for (const t of TOGGLES) out[t.key] = checkbox(t.key).checked
   // Out-of-range numbers are clamped here rather than stored as typed.
@@ -119,6 +122,7 @@ async function main(): Promise<void> {
   const client = await connectExtension()
   root.innerHTML = '<p class="status">Loading…</p>'
   root.innerHTML = form(parseSteerConfig(await client.state.get()))
+  wireThemeChips()
 
   const status = el('status')
   el('save').addEventListener('click', () => {

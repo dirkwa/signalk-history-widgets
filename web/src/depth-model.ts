@@ -1,6 +1,8 @@
 // The depth profile's settings, which depth it follows and its depth axis.
 // No DOM and no bus, so it is unit tested directly.
 
+import { parseTheme, type Theme } from './theme.js'
+
 export const DEPTH_PATHS = [
   { path: 'environment.depth.belowSurface', label: 'Below surface' },
   { path: 'environment.depth.belowTransducer', label: 'Below transducer' },
@@ -14,15 +16,17 @@ export interface DepthConfig {
   /** One of DEPTH_PATHS; empty picks the first the server has. */
   path: string
   minutes: number
+  /** The card behind the widget; night mode overrides it. */
+  theme: Theme
 }
 
-export const DEPTH_DEFAULTS: DepthConfig = { path: '', minutes: 30 }
+export const DEPTH_DEFAULTS: DepthConfig = { path: '', minutes: 30, theme: 'dark' }
 
 /** Stored state is host data and may be anything; take what is usable. */
 export function parseDepthConfig(stored: Record<string, unknown>): DepthConfig {
   const path = DEPTH_PATHS.some((d) => d.path === stored.path) ? String(stored.path) : ''
   const minutes = DEPTH_WINDOWS.find((m) => m === stored.minutes) ?? DEPTH_DEFAULTS.minutes
-  return { path, minutes }
+  return { path, minutes, theme: parseTheme(stored.theme) }
 }
 
 /**

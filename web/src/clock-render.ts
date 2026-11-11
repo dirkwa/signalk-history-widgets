@@ -13,6 +13,12 @@ export const CLOCK_DAY: ClockPalette = {
   muted: '#9fb3c4'
 }
 
+export const CLOCK_LIGHT: ClockPalette = {
+  card: 'rgba(246, 248, 250, 0.9)',
+  text: '#1d2329',
+  muted: '#546e7a'
+}
+
 export const CLOCK_NIGHT: ClockPalette = {
   card: 'rgba(8, 0, 0, 0.85)',
   text: '#d32f2f',

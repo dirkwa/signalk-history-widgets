@@ -2,6 +2,8 @@
 // battery's state of charge) and the zone logic that colours them. Pure, so it
 // runs under the unit tests.
 
+import { parseTheme, type Theme } from './theme.js'
+
 export type LevelKind = 'tank' | 'battery'
 
 /** A shaded 3D cylinder or a flat bar. */
@@ -15,9 +17,17 @@ export interface LevelConfig {
   style: LevelStyle
   /** Show the volume left (tank) or the voltage and current (battery) under the level. */
   showDetail: boolean
+  /** The card behind the widget; night mode overrides it. */
+  theme: Theme
 }
 
-export const LEVEL_DEFAULTS: LevelConfig = { path: '', label: '', style: '3d', showDetail: true }
+export const LEVEL_DEFAULTS: LevelConfig = {
+  path: '',
+  label: '',
+  style: '3d',
+  showDetail: true,
+  theme: 'dark'
+}
 
 export function parseLevelConfig(stored: unknown): LevelConfig {
   const s = typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>) : {}
@@ -25,7 +35,8 @@ export function parseLevelConfig(stored: unknown): LevelConfig {
     path: typeof s.path === 'string' ? s.path : LEVEL_DEFAULTS.path,
     label: typeof s.label === 'string' ? s.label : LEVEL_DEFAULTS.label,
     style: s.style === 'flat' || s.style === '3d' ? s.style : LEVEL_DEFAULTS.style,
-    showDetail: typeof s.showDetail === 'boolean' ? s.showDetail : LEVEL_DEFAULTS.showDetail
+    showDetail: typeof s.showDetail === 'boolean' ? s.showDetail : LEVEL_DEFAULTS.showDetail,
+    theme: parseTheme(s.theme)
   }
 }
 

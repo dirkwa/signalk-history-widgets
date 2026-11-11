@@ -4,6 +4,7 @@
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
 import { installLongPress, followNightMode } from './host.js'
+import { followScreenScheme, paletteFor, screenIsLight } from './theme.js'
 import {
   CLOCK_PATHS,
   BoatZoneReadings,
@@ -14,7 +15,7 @@ import {
   serialized,
   type ClockConfig
 } from './clock-model.js'
-import { CLOCK_DAY, CLOCK_NIGHT, drawClock } from './clock-render.js'
+import { CLOCK_DAY, CLOCK_LIGHT, CLOCK_NIGHT, drawClock } from './clock-render.js'
 import { fetchValue } from './signalk.js'
 import './styles.css'
 
@@ -45,7 +46,12 @@ function render(): void {
     keep: text.fallback ? text.zoneName : undefined,
     time: text.time,
     date: config.showDate ? text.date : '',
-    palette: night ? CLOCK_NIGHT : CLOCK_DAY
+    palette: paletteFor(
+      { dark: CLOCK_DAY, light: CLOCK_LIGHT, night: CLOCK_NIGHT },
+      config.theme,
+      night,
+      screenIsLight()
+    )
   })
 }
 
@@ -83,6 +89,7 @@ async function main(client: ExtensionClient): Promise<void> {
   }).catch((err: unknown) => {
     console.warn('clock: night mode unavailable', err)
   })
+  followScreenScheme(queueRender)
   tick()
   loadSettings()
   // The stream carries changes only, and the boat's zone rarely changes, so

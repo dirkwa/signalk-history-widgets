@@ -1,6 +1,8 @@
 // A widget instance's settings, as the configuration panel stores them in
 // the host's per-instance state.
 
+import { parseTheme, type Theme } from './theme.js'
+
 export type SpanUnit = 'min' | 'h'
 
 export interface StripConfig {
@@ -13,6 +15,8 @@ export interface StripConfig {
   unit: string
   /** Decimal places; negative means automatic. */
   decimals: number
+  /** The card behind the widget; night mode overrides it. */
+  theme: Theme
 }
 
 export const DEFAULT_CONFIG: StripConfig = {
@@ -21,7 +25,8 @@ export const DEFAULT_CONFIG: StripConfig = {
   span: 30,
   spanUnit: 'min',
   unit: '',
-  decimals: -1
+  decimals: -1,
+  theme: 'dark'
 }
 
 const MIN_WINDOW_MS = 60_000
@@ -84,7 +89,8 @@ export function parseConfig(stored: Record<string, unknown>): StripConfig {
     span: span > 0 ? span : DEFAULT_CONFIG.span,
     spanUnit: stored.spanUnit === 'h' ? 'h' : 'min',
     unit: str(stored.unit, DEFAULT_CONFIG.unit),
-    decimals: Math.min(4, Math.round(num(stored.decimals, DEFAULT_CONFIG.decimals)))
+    decimals: Math.min(4, Math.round(num(stored.decimals, DEFAULT_CONFIG.decimals))),
+    theme: parseTheme(stored.theme)
   }
 }
 

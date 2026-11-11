@@ -1,6 +1,8 @@
 // The clock widget's settings, the time zone it shows and the text it draws.
 // No DOM and no bus, so it is unit tested directly.
 
+import { parseTheme, type Theme } from './theme.js'
+
 export type ClockZone = 'local' | 'utc' | 'boat'
 export type HourCycle = '24' | '12'
 
@@ -11,6 +13,8 @@ export interface ClockConfig {
   seconds: boolean
   showDate: boolean
   label: string
+  /** The card behind the widget; night mode overrides it. */
+  theme: Theme
 }
 
 export const CLOCK_DEFAULTS: ClockConfig = {
@@ -18,7 +22,8 @@ export const CLOCK_DEFAULTS: ClockConfig = {
   hours: '24',
   seconds: false,
   showDate: true,
-  label: ''
+  label: '',
+  theme: 'dark'
 }
 
 /** Stored state is host data and may be anything; take what is usable. */
@@ -30,7 +35,8 @@ export function parseClockConfig(stored: Record<string, unknown>): ClockConfig {
     hours: stored.hours === '12' ? '12' : d.hours,
     seconds: bool(stored.seconds, d.seconds),
     showDate: bool(stored.showDate, d.showDate),
-    label: typeof stored.label === 'string' ? stored.label.trim() : d.label
+    label: typeof stored.label === 'string' ? stored.label.trim() : d.label,
+    theme: parseTheme(stored.theme)
   }
 }
 

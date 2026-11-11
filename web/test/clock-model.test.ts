@@ -28,9 +28,17 @@ describe('parseClockConfig', () => {
         hours: '12',
         seconds: true,
         showDate: false,
-        label: ' Salon '
+        label: ' Salon ',
+        theme: 'light'
       })
-    ).toEqual({ zone: 'boat', hours: '12', seconds: true, showDate: false, label: 'Salon' })
+    ).toEqual({
+      zone: 'boat',
+      hours: '12',
+      seconds: true,
+      showDate: false,
+      label: 'Salon',
+      theme: 'light'
+    })
     expect(parseClockConfig({ zone: 'mars', hours: 13, seconds: 'yes', label: 4 })).toEqual(
       CLOCK_DEFAULTS
     )
