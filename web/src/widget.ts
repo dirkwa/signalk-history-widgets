@@ -12,7 +12,7 @@ import {
   type StripConfig
 } from './config-model.js'
 import { REQUEST_TIMEOUT_MS, fetchHistory, fetchHistoryWhenReady } from './history.js'
-import { followNightMode, installLongPress } from './host.js'
+import { followNightMode, installLongPress, onResume } from './host.js'
 import { DAY, LIGHT, NIGHT, draw, type Frame } from './render.js'
 import { followScreenScheme, paletteFor, screenIsLight } from './theme.js'
 import { Series, wrapAngle } from './series.js'
@@ -182,11 +182,11 @@ async function main(): Promise<void> {
       console.warn('history strip: settings reload failed', err)
     })
   })
-  // History fills the gaps left while the page was hidden and saw no deltas.
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && strip) {
-      void seed(strip, generation, false)
-    }
+  // History fills the gaps left while the page was hidden or stopped and saw
+  // no deltas. Asked until it answers, as a browser coming back from a stop
+  // sends every widget's query at once.
+  onResume(async () => {
+    if (strip) await seed(strip, generation, true)
   })
   await followNightMode(client, (enabled) => {
     night = enabled

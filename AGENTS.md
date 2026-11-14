@@ -19,7 +19,8 @@ a clock, a depth profile and a system health tile.
   - `units.ts` — display units from the path's `meta.displayUnits`.
   - `history.ts` — the History API query and its parsing.
   - `render.ts` — the canvas drawing.
-  - `host.ts` — press and hold and night mode, shared by every widget.
+  - `host.ts` — press and hold, night mode and noticing that the page runs
+    again after it was hidden or stopped, shared by every widget.
   - `steer-model.ts`, `steer-render.ts`, `steer.ts`, `steer-config.ts` — the
     wind steering dial: settings and angle maths, drawing (every angle off the
     bow, so one drawing serves both dial types), the widget, its panel.
