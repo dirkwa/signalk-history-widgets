@@ -6,8 +6,14 @@ import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/e
 import { DEPTH_PATHS, depthPath, depthTitle, parseDepthConfig } from './depth-model.js'
 import { DEPTH_DAY, DEPTH_LIGHT, DEPTH_NIGHT, drawDepth, type DepthFrame } from './depth-render.js'
 import { REQUEST_TIMEOUT_MS, fetchHistory, fetchHistoryWhenReady } from './history.js'
-import { followNightMode, installLongPress, onResume } from './host.js'
-import { type Theme, followScreenScheme, paletteFor, screenIsLight } from './theme.js'
+import { followNightMode, followPanelOpacity, installLongPress, onResume } from './host.js'
+import {
+  type Theme,
+  followScreenScheme,
+  paletteFor,
+  screenIsLight,
+  withPanelOpacity
+} from './theme.js'
 import { Series } from './series.js'
 import { fetchMeta, readValue } from './signalk.js'
 import { convert, resolveDisplay, type Display } from './units.js'
@@ -32,17 +38,21 @@ const canvas = document.createElement('canvas')
 document.getElementById('root')?.append(canvas)
 let profile: Profile | undefined
 let night = false
+let panelOpacity: number | null = null
 let generation = 0
 let unsubscribe: (() => Promise<void>) | undefined
 let timer: ReturnType<typeof setInterval> | undefined
 let drawQueued = false
 
 function frame(now: number): DepthFrame {
-  const palette = paletteFor(
-    { dark: DEPTH_DAY, light: DEPTH_LIGHT, night: DEPTH_NIGHT },
-    profile?.theme ?? 'dark',
-    night,
-    screenIsLight()
+  const palette = withPanelOpacity(
+    paletteFor(
+      { dark: DEPTH_DAY, light: DEPTH_LIGHT, night: DEPTH_NIGHT },
+      profile?.theme ?? 'dark',
+      night,
+      screenIsLight()
+    ),
+    panelOpacity
   )
   const s = profile
   if (!s) {
@@ -183,6 +193,12 @@ async function main(): Promise<void> {
     queueRender()
   }).catch((err: unknown) => {
     console.warn('depth profile: night mode unavailable', err)
+  })
+  await followPanelOpacity(client, (opacity) => {
+    panelOpacity = opacity
+    queueRender()
+  }).catch((err: unknown) => {
+    console.warn('depth profile: panel opacity unavailable', err)
   })
   followScreenScheme(queueRender)
   load(client)

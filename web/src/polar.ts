@@ -2,8 +2,8 @@
 // percentage averaged over a few seconds, coloured by its zone.
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
-import { installLongPress, followNightMode } from './host.js'
-import { followScreenScheme, paletteFor, screenIsLight } from './theme.js'
+import { followNightMode, followPanelOpacity, installLongPress } from './host.js'
+import { followScreenScheme, paletteFor, screenIsLight, withPanelOpacity } from './theme.js'
 import { fetchMeta } from './signalk.js'
 import { SourceClock } from './steer-model.js'
 import type { Zone } from './level-model.js'
@@ -31,6 +31,7 @@ const canvas = document.createElement('canvas')
 document.getElementById('root')?.append(canvas)
 let config: PolarConfig = POLAR_DEFAULTS
 let night = false
+let panelOpacity: number | null = null
 let zones: Zone[] = zonesFor(undefined)
 let speedDisplay: Display = resolveDisplay({ units: 'm/s' }, undefined, 1)
 let average = new RatioAverage()
@@ -55,11 +56,14 @@ function frame(now: number): PolarFrame {
     text: ratio === undefined ? '--' : `${Math.round(ratio * 100)} %`,
     detail: detailText(ratio, now),
     level: ratio === undefined ? 'ok' : ratioLevel(ratio, zones),
-    palette: paletteFor(
-      { dark: LEVEL_DAY, light: LEVEL_LIGHT, night: LEVEL_NIGHT },
-      config.theme,
-      night,
-      screenIsLight()
+    palette: withPanelOpacity(
+      paletteFor(
+        { dark: LEVEL_DAY, light: LEVEL_LIGHT, night: LEVEL_NIGHT },
+        config.theme,
+        night,
+        screenIsLight()
+      ),
+      panelOpacity
     )
   }
 }
@@ -164,6 +168,12 @@ async function main(client: ExtensionClient): Promise<void> {
     queueRender()
   }).catch((err: unknown) => {
     console.warn('polar: night mode unavailable', err)
+  })
+  await followPanelOpacity(client, (opacity) => {
+    panelOpacity = opacity
+    queueRender()
+  }).catch((err: unknown) => {
+    console.warn('polar: panel opacity unavailable', err)
   })
   followScreenScheme(queueRender)
   await loadSettings()

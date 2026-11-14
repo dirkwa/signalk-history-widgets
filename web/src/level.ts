@@ -4,8 +4,8 @@
 // bank's voltage and current underneath. The page's entry module picks the kind.
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
-import { installLongPress, followNightMode } from './host.js'
-import { followScreenScheme, paletteFor, screenIsLight } from './theme.js'
+import { followNightMode, followPanelOpacity, installLongPress } from './host.js'
+import { followScreenScheme, paletteFor, screenIsLight, withPanelOpacity } from './theme.js'
 import { fetchMeta, fetchValue } from './signalk.js'
 import { SourceClock } from './steer-model.js'
 import {
@@ -51,6 +51,7 @@ export function startLevel(kind: LevelKind): void {
   document.getElementById('root')?.append(canvas)
   let state: State | undefined
   let night = false
+  let panelOpacity: number | null = null
   let generation = 0
   let unsubscribe: (() => Promise<void>) | undefined
   let drawQueued = false
@@ -59,11 +60,14 @@ export function startLevel(kind: LevelKind): void {
     r && (!ages || now - r.time < STALE_MS) ? r.value : undefined
 
   function frame(now: number): LevelFrame {
-    const palette = paletteFor(
-      { dark: LEVEL_DAY, light: LEVEL_LIGHT, night: LEVEL_NIGHT },
-      state?.config.theme ?? 'dark',
-      night,
-      screenIsLight()
+    const palette = withPanelOpacity(
+      paletteFor(
+        { dark: LEVEL_DAY, light: LEVEL_LIGHT, night: LEVEL_NIGHT },
+        state?.config.theme ?? 'dark',
+        night,
+        screenIsLight()
+      ),
+      panelOpacity
     )
     const s = state
     if (!s?.config.path) {
@@ -210,6 +214,12 @@ export function startLevel(kind: LevelKind): void {
       queueRender()
     }).catch((err: unknown) => {
       console.warn(`${kind}: night mode unavailable`, err)
+    })
+    await followPanelOpacity(client, (opacity) => {
+      panelOpacity = opacity
+      queueRender()
+    }).catch((err: unknown) => {
+      console.warn(`${kind}: panel opacity unavailable`, err)
     })
     followScreenScheme(queueRender)
     await apply(client)

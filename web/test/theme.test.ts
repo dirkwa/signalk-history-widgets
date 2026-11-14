@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { paletteFor, parseTheme } from '../src/theme.js'
+import { paletteFor, parseTheme, withPanelOpacity } from '../src/theme.js'
 
 const PALETTES = { dark: 'dark', light: 'light', night: 'night' }
 
@@ -28,5 +28,18 @@ describe('paletteFor', () => {
     for (const theme of ['dark', 'light', 'auto'] as const) {
       expect(paletteFor(PALETTES, theme, true, true)).toBe('night')
     }
+  })
+})
+
+describe('withPanelOpacity', () => {
+  const palette = { card: 'rgba(20, 26, 32, 0.78)', text: '#fff' }
+
+  it('keeps the card when the user chose no panel opacity', () => {
+    expect(withPanelOpacity(palette, null)).toBe(palette)
+  })
+
+  it('draws the card at the chosen opacity and leaves the rest', () => {
+    expect(withPanelOpacity(palette, 1)).toEqual({ card: 'rgba(20, 26, 32, 1)', text: '#fff' })
+    expect(withPanelOpacity(palette, 0.5).card).toBe('rgba(20, 26, 32, 0.5)')
   })
 })

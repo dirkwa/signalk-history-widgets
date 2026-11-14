@@ -4,8 +4,8 @@
 // instance state the configuration panel writes.
 
 import { connectExtension, type ExtensionClient } from 'signalk-plotterext-bus/extension'
-import { installLongPress, followNightMode } from './host.js'
-import { followScreenScheme, paletteFor, screenIsLight } from './theme.js'
+import { followNightMode, followPanelOpacity, installLongPress } from './host.js'
+import { followScreenScheme, paletteFor, screenIsLight, withPanelOpacity } from './theme.js'
 import { fetchMeta } from './signalk.js'
 import {
   ShiftWindow,
@@ -59,6 +59,7 @@ const canvas = document.createElement('canvas')
 document.getElementById('root')?.append(canvas)
 let state: State | undefined
 let night = false
+let panelOpacity: number | null = null
 let generation = 0
 let unsubscribe: (() => Promise<void>) | undefined
 let drawQueued = false
@@ -83,11 +84,14 @@ function angleReadout(label: string, a: number | undefined): Readout {
 }
 
 function frame(now: number): SteerFrame {
-  const palette = paletteFor(
-    { dark: STEER_DAY, light: STEER_LIGHT, night: STEER_NIGHT },
-    state?.config.theme ?? 'dark',
-    night,
-    screenIsLight()
+  const palette = withPanelOpacity(
+    paletteFor(
+      { dark: STEER_DAY, light: STEER_LIGHT, night: STEER_NIGHT },
+      state?.config.theme ?? 'dark',
+      night,
+      screenIsLight()
+    ),
+    panelOpacity
   )
   const blank = { label: '', value: '', unit: '' }
   const s = state
@@ -230,6 +234,12 @@ async function main(): Promise<void> {
     queueRender()
   }).catch((err: unknown) => {
     console.warn('wind steering: night mode unavailable', err)
+  })
+  await followPanelOpacity(client, (opacity) => {
+    panelOpacity = opacity
+    queueRender()
+  }).catch((err: unknown) => {
+    console.warn('wind steering: panel opacity unavailable', err)
   })
   followScreenScheme(queueRender)
   await apply(client)

@@ -12,9 +12,9 @@ import {
   type StripConfig
 } from './config-model.js'
 import { REQUEST_TIMEOUT_MS, fetchHistory, fetchHistoryWhenReady } from './history.js'
-import { followNightMode, installLongPress, onResume } from './host.js'
+import { followNightMode, followPanelOpacity, installLongPress, onResume } from './host.js'
 import { DAY, LIGHT, NIGHT, draw, type Frame } from './render.js'
-import { followScreenScheme, paletteFor, screenIsLight } from './theme.js'
+import { followScreenScheme, paletteFor, screenIsLight, withPanelOpacity } from './theme.js'
 import { Series, wrapAngle } from './series.js'
 import { fetchMeta } from './signalk.js'
 import { convert, resolveDisplay, type Display } from './units.js'
@@ -38,6 +38,7 @@ const canvas = document.createElement('canvas')
 document.getElementById('root')?.append(canvas)
 let strip: Strip | undefined
 let night = false
+let panelOpacity: number | null = null
 let generation = 0
 let unsubscribe: (() => Promise<void>) | undefined
 let timer: ReturnType<typeof setInterval> | undefined
@@ -56,11 +57,14 @@ function text(si: number | undefined, s: Strip): string {
 }
 
 function frame(now: number): Frame {
-  const palette = paletteFor(
-    { dark: DAY, light: LIGHT, night: NIGHT },
-    strip?.config.theme ?? 'dark',
-    night,
-    screenIsLight()
+  const palette = withPanelOpacity(
+    paletteFor(
+      { dark: DAY, light: LIGHT, night: NIGHT },
+      strip?.config.theme ?? 'dark',
+      night,
+      screenIsLight()
+    ),
+    panelOpacity
   )
   const s = strip
   if (!s) {
@@ -193,6 +197,12 @@ async function main(): Promise<void> {
     queueRender()
   }).catch((err: unknown) => {
     console.warn('history strip: night mode unavailable', err)
+  })
+  await followPanelOpacity(client, (opacity) => {
+    panelOpacity = opacity
+    queueRender()
+  }).catch((err: unknown) => {
+    console.warn('history strip: panel opacity unavailable', err)
   })
   followScreenScheme(queueRender)
   await apply(client)

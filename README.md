@@ -42,6 +42,11 @@ its settings: **Light** for a bright screen in daylight, or **Auto** to follow
 the screen's light or dark setting. In Freeboard-SK's night mode every widget
 turns red on black, whatever its background.
 
+The cards are translucent, so the chart shows through. A chartplotter that
+offers one **Panel background** for all its panels (the `display` capability
+of Plotter Extensions) sets how see-through every widget is; left on its
+default, the widgets keep their own look.
+
 ![The widgets on a light and on a dark background](docs/screenshots/light-background.png)
 
 ![Configuration](docs/screenshots/config.png)
