@@ -48,23 +48,45 @@ export function pausedBetween(lastCheck: number, now: number): boolean {
 }
 
 /**
- * Calls back whenever the page runs again after it could not: shown again
+ * Runs `reload` whenever the page runs again after it could not: shown again
  * after it was hidden, or going on after the whole browser was stopped. A
  * kiosk stops its browser (SIGSTOP) while the monitor is off; the page never
  * becomes hidden then, so no visibilitychange comes, and only the clock
  * having jumped between two checks gives the pause away. Timers of a hidden
  * page are throttled, so the clock is judged only while the page is visible.
+ *
+ * One reload runs at a time. A pause that ends while one is under way leaves
+ * a gap of its own, so another reload follows.
  */
-export function onResume(callback: () => void): void {
+export function onResume(reload: () => Promise<void>): void {
+  let running = false
+  let again = false
+  const resumed = () => {
+    if (running) {
+      again = true
+      return
+    }
+    running = true
+    void Promise.resolve()
+      .then(reload)
+      .catch(() => undefined)
+      .finally(() => {
+        running = false
+        if (again) {
+          again = false
+          resumed()
+        }
+      })
+  }
   let lastCheck = Date.now()
   document.addEventListener('visibilitychange', () => {
     lastCheck = Date.now()
-    if (document.visibilityState === 'visible') callback()
+    if (document.visibilityState === 'visible') resumed()
   })
   setInterval(() => {
     const now = Date.now()
     if (document.visibilityState === 'visible' && pausedBetween(lastCheck, now)) {
-      callback()
+      resumed()
     }
     lastCheck = now
   }, RESUME_CHECK_MS)

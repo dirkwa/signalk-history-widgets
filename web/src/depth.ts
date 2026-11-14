@@ -174,14 +174,9 @@ async function main(): Promise<void> {
   })
   // History fills the gaps left while the page was hidden or stopped and saw
   // no deltas. Asked until it answers, as a browser coming back from a stop
-  // sends every widget's query at once; one at a time.
-  let reseeding = false
-  onResume(() => {
-    if (!profile || reseeding) return
-    reseeding = true
-    void seed(profile, true).finally(() => {
-      reseeding = false
-    })
+  // sends every widget's query at once.
+  onResume(async () => {
+    if (profile) await seed(profile, true)
   })
   await followNightMode(client, (enabled) => {
     night = enabled

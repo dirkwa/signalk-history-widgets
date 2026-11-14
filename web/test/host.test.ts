@@ -24,31 +24,55 @@ describe('onResume', () => {
     vi.restoreAllMocks()
   })
 
-  it('calls back when the browser runs again after it was stopped', () => {
-    const resumed = vi.fn()
+  it('calls back when the browser runs again after it was stopped', async () => {
+    const resumed = vi.fn(() => Promise.resolve())
     onResume(resumed)
 
-    vi.advanceTimersByTime(60_000)
+    await vi.advanceTimersByTimeAsync(60_000)
     expect(resumed).not.toHaveBeenCalled()
 
     // A stopped browser runs no timers; on resuming, the clock has jumped.
     vi.setSystemTime(Date.now() + 3 * 60 * 60_000)
-    vi.advanceTimersByTime(5_000)
+    await vi.advanceTimersByTimeAsync(5_000)
     expect(resumed).toHaveBeenCalledOnce()
 
-    vi.advanceTimersByTime(60_000)
+    await vi.advanceTimersByTimeAsync(60_000)
     expect(resumed).toHaveBeenCalledOnce()
   })
 
-  it('calls back once when a hidden page is shown again', () => {
-    const resumed = vi.fn()
+  it('reloads again when a pause ends while a reload is under way', async () => {
+    let finish: () => void = () => undefined
+    const reload = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve
+        })
+    )
+    onResume(reload)
+
+    vi.setSystemTime(Date.now() + 60 * 60_000)
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(reload).toHaveBeenCalledOnce()
+
+    // stopped again while the first reload still waits for an answer
+    vi.setSystemTime(Date.now() + 60 * 60_000)
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(reload).toHaveBeenCalledOnce()
+
+    finish()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(reload).toHaveBeenCalledTimes(2)
+  })
+
+  it('calls back once when a hidden page is shown again', async () => {
+    const resumed = vi.fn(() => Promise.resolve())
     onResume(resumed)
 
     visibility = 'hidden'
     document.dispatchEvent(new Event('visibilitychange'))
     // timers of a hidden page are throttled, which is no pause
     vi.setSystemTime(Date.now() + 10 * 60_000)
-    vi.advanceTimersByTime(5_000)
+    await vi.advanceTimersByTimeAsync(5_000)
     expect(resumed).not.toHaveBeenCalled()
 
     // shown again before the throttled timer's next tick: the tick right
@@ -56,7 +80,7 @@ describe('onResume', () => {
     vi.setSystemTime(Date.now() + 50_000)
     visibility = 'visible'
     document.dispatchEvent(new Event('visibilitychange'))
-    vi.advanceTimersByTime(5_000)
+    await vi.advanceTimersByTimeAsync(5_000)
     expect(resumed).toHaveBeenCalledOnce()
   })
 })
